@@ -1,0 +1,57 @@
+#!/bin/bash
+touch .findf_text
+touch .findf_tags
+touch .findf_result
+printf "Please wait while searching... "
+grep -n -H -r --binary-files=without-match --exclude=*.svn-base --exclude=*.tmp --exclude=all-wcprops --exclude=entries "$@" * >.findf_text
+if [ ! -s .findf_text ]
+then
+printf "\r                                      \r"
+echo String not Found.
+exit 1
+fi
+rm .findf_tags
+rm .findf_result
+awk '
+BEGIN {
+    lastpath="";
+    find_count=1;
+    printf "\r                                      \r"
+    printf "Please wait while processing... "
+}
+{
+    index1=index($0, ":");
+    path=substr($0, 1, index1-1);
+    rest=substr($0, index1+1);
+    index1=index(rest, ":");
+    line=substr(rest, 1, index1-1);
+    content=substr(rest, index1+1);
+    printf "findf%05d\t%s\t%s\n", find_count, path, line>>".findf_tags.ns"
+    if(path!=lastpath) {
+        if (lastpath!="")
+            printf "\n" >>".findf_result"
+        printf "%s:\n", path >>".findf_result"
+        lastpath=path;
+    }
+    printf "findf%05d @%s:%s\n", find_count, line, content>>".findf_result"
+    find_count++;
+    if(i==0) {
+        printf "\b-";
+    } else if (i==1000) {
+        printf "\b\\";
+    } else if (i==2000) {
+        printf "\b|";
+    } else if (i==3000) {
+        printf "\b/";
+    }
+    i=(i+1)%4000;
+}
+END {
+}' .findf_text
+rm .findf_text
+printf "\r                                      \r"
+cat .findf_tags.ns |sort >.findf_tags
+rm .findf_tags.ns
+vi +"set nowrap" .findf_result
+rm .findf_tags
+rm .findf_result
