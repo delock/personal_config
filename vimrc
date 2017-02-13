@@ -36,12 +36,14 @@ highlight Constant ctermfg=blue
 highlight PreProc ctermfg=darkblue
 highlight Search ctermfg=white ctermbg=darkyellow
 highlight Folded ctermbg=black ctermfg=darkgray
-highlight DiffAdd term=bold ctermbg=gray ctermfg=darkblue
-highlight DiffDelete term=bold ctermbg=black ctermfg=darkgray
-highlight DiffText term=reverse cterm=bold ctermbg=gray ctermfg=darkred
-highlight DiffChange term=bold ctermbg=gray
+highlight FoldColumn ctermbg=black ctermfg=darkgray
+highlight DiffAdd cterm=bold ctermbg=darkgray ctermfg=white
+highlight DiffDelete cterm=bold ctermbg=black ctermfg=darkgray
+highlight DiffText cterm=underline ctermbg=darkgray ctermfg=lightyellow
+highlight DiffChange cterm=bold ctermbg=darkgray
 highlight CursorLine ctermfg=NONE ctermbg=black cterm=NONE
 highlight CursorColumn ctermfg=NONE ctermbg=black cterm=NONE
+highlight VertSplit ctermbg=black cterm=NONE ctermfg=darkgray
 
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
 behave mswin
