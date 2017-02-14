@@ -24,6 +24,7 @@ set shortmess=filnxtToO
 set ru
 syntax on
 
+"233=#121212 220=#ffd700 16=#000000
 highlight Comment ctermfg=darkgray
 highlight Repeat ctermfg=darkblue
 highlight Conditional ctermfg=white
@@ -34,15 +35,16 @@ highlight Number ctermfg=blue
 highlight Statement ctermfg=white
 highlight Constant ctermfg=blue
 highlight PreProc ctermfg=darkblue
-highlight Search ctermfg=white ctermbg=darkyellow
+highlight Search ctermfg=220 ctermbg=none
+highlight IncSearch ctermfg=220 ctermbg=none cterm=none
 highlight Folded ctermbg=black ctermfg=darkgray
 highlight FoldColumn ctermbg=black ctermfg=darkgray
-highlight DiffAdd cterm=bold ctermbg=darkgray ctermfg=white
-highlight DiffDelete cterm=bold ctermbg=black ctermfg=darkgray
-highlight DiffText cterm=underline ctermbg=darkgray ctermfg=lightyellow
-highlight DiffChange cterm=bold ctermbg=darkgray
-highlight CursorLine ctermfg=NONE ctermbg=black cterm=NONE
-highlight CursorColumn ctermfg=NONE ctermbg=black cterm=NONE
+highlight DiffAdd cterm=none ctermbg=233 ctermfg=white
+highlight DiffDelete cterm=none ctermbg=black ctermfg=darkgray
+highlight DiffText cterm=bold ctermbg=233 ctermfg=204
+highlight DiffChange cterm=none ctermbg=233
+highlight CursorLine ctermfg=NONE ctermbg=16 cterm=none
+highlight CursorColumn ctermfg=NONE ctermbg=16 cterm=none
 highlight VertSplit ctermbg=black cterm=NONE ctermfg=darkgray
 
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
