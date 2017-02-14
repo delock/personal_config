@@ -14,8 +14,8 @@ ANSI yellow                 128,    128,    0
 ANSI yellow bold            166,    166,    55
 ANSI blue                   0,      91,     170
 ANSI blue bold              0,      136,    255
-ANSI magenta                170,    0,      170
-ANSI magenta bold           217,    72,     217
+ANSI magenta                170,    0,      85
+ANSI magenta bold           217,    72,     144
 ANSI cyan                   0,      164,    170
 ANSI cyan bold              0       210     217
 ANSI white                  179     179     179
