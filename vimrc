@@ -17,6 +17,7 @@ Plugin 'VundleVim/Vundle.vim'
 " Keep Plugin commands between vundle#begin/end.
 " plugin on GitHub repo
 Plugin 'Valloric/YouCompleteMe'
+"Plugin 'rdnetto/YCM_Generator'
 "Plugin 'tpope/vim-fugitive'
 " plugin from http://vim-scripts.org/vim/scripts.html
 "Plugin 'L9'
@@ -98,6 +99,8 @@ highlight DiffChange cterm=none ctermbg=233
 highlight CursorLine ctermfg=NONE ctermbg=16 cterm=none
 highlight CursorColumn ctermfg=NONE ctermbg=16 cterm=none
 highlight VertSplit ctermbg=black cterm=NONE ctermfg=darkgray
+highlight Pmenu ctermbg=darkgray cterm=NONE ctermfg=black
+highlight PmenuSel ctermbg=gray cterm=NONE ctermfg=black
 
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
 behave mswin
@@ -209,4 +212,8 @@ if has ("autocmd")
         \ endif
 endif
 
+" auto accept extra_conf
 let g:ycm_confirm_extra_conf = 0
+" don't need diagnostic function from ycm
+let g:ycm_show_diagnostics_ui = 0
+let g:ycm_key_invoke_completion = '<C-b>'
