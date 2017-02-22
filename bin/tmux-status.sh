@@ -87,4 +87,4 @@ df -h|awk '
     print str;
 }
 '`\
-#[fg=colour8]\|#[fg=red]`hostname`
+#[fg=colour8]\|#[fg=white]`hostname`

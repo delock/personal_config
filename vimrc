@@ -101,6 +101,7 @@ highlight CursorColumn ctermfg=NONE ctermbg=16 cterm=none
 highlight VertSplit ctermbg=black cterm=NONE ctermfg=darkgray
 highlight Pmenu ctermbg=darkgray cterm=NONE ctermfg=black
 highlight PmenuSel ctermbg=gray cterm=NONE ctermfg=black
+highlight MatchParen cterm=NONE ctermbg=14 ctermfg=black
 
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
 behave mswin
