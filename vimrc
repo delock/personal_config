@@ -62,6 +62,10 @@ set noautoindent
 set expandtab
 set cursorline
 set cursorcolumn
+if &diff
+    set nocursorline
+    set nocursorcolumn
+endif
 filetype plugin indent off
 set nocindent
 set noshowmatch
