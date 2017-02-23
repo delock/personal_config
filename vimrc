@@ -106,6 +106,9 @@ highlight VertSplit ctermbg=black cterm=NONE ctermfg=darkgray
 highlight Pmenu ctermbg=darkgray cterm=NONE ctermfg=black
 highlight PmenuSel ctermbg=gray cterm=NONE ctermfg=black
 highlight MatchParen cterm=NONE ctermbg=14 ctermfg=black
+highlight TabLineSel cterm=NONE ctermbg=236 ctermfg=gray
+highlight TabLine cterm=NONE ctermbg=234 ctermfg=darkgray
+highlight TabLineFill cterm=NONE ctermbg=234 ctermfg=darkgray
 
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
 behave mswin
