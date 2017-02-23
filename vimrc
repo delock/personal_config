@@ -69,7 +69,8 @@ endif
 filetype plugin indent off
 set nocindent
 set noshowmatch
-set tags=./tags,./.findf_tags
+set noautochdir
+set tags=tags;,.findf_tags
 set hlsearch
 set incsearch
 set history=100
