@@ -83,10 +83,10 @@ set ru
 syntax on
 
 "233=#121212 220=#ffd700 16=#000000
-highlight Comment ctermfg=darkgray
-highlight Repeat ctermfg=darkblue
-highlight Conditional ctermfg=white
-highlight Type ctermfg=white
+highlight Comment ctermfg=239
+highlight Repeat ctermfg=255
+highlight Conditional ctermfg=255
+highlight Type ctermfg=255
 highlight String ctermfg=darkgreen
 highlight Special ctermfg=green
 highlight Number ctermfg=blue
@@ -114,7 +114,7 @@ highlight Todo cterm=reverse ctermfg=221 ctermbg=black
 highlight ColorColumn cterm=NONE ctermbg=233 ctermfg=none
 
 " mark column 80 and 120+
-let &colorcolumn="80,".join(range(120,999),",")
+let &colorcolumn="81,".join(range(121,999),",")
 
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
 behave mswin
