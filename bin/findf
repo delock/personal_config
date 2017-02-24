@@ -3,7 +3,7 @@ touch .findf_text
 touch .findf_tags
 touch .findf_result
 printf "Please wait while searching... "
-grep -n -H -r --binary-files=without-match --exclude=tags --exclude=*.svn-base --exclude=*.tmp --exclude=all-wcprops --exclude=entries "$@" * >.findf_text
+grep -n -H -r --binary-files=without-match --exclude=tags --exclude=*.svn-base --exclude=*.diff --exclude=*.patch --exclude=*.tmp --exclude=all-wcprops --exclude=entries `cat .findf_ignore 2>/dev/null` "$@" * >.findf_text
 if [ ! -s .findf_text ]
 then
 printf "\r                                      \r"

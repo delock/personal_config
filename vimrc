@@ -101,15 +101,20 @@ highlight DiffAdd cterm=none ctermbg=233 ctermfg=white
 highlight DiffDelete cterm=none ctermbg=black ctermfg=darkgray
 highlight DiffText cterm=bold ctermbg=233 ctermfg=204
 highlight DiffChange cterm=none ctermbg=233
+highlight MatchParen cterm=bold ctermbg=none ctermfg=220
 highlight CursorLine ctermfg=NONE ctermbg=16 cterm=none
 highlight CursorColumn ctermfg=NONE ctermbg=16 cterm=none
 highlight VertSplit ctermbg=black cterm=NONE ctermfg=darkgray
 highlight Pmenu ctermbg=darkgray cterm=NONE ctermfg=black
 highlight PmenuSel ctermbg=gray cterm=NONE ctermfg=black
-highlight MatchParen cterm=NONE ctermbg=14 ctermfg=black
 highlight TabLineSel cterm=NONE ctermbg=236 ctermfg=gray
 highlight TabLine cterm=NONE ctermbg=234 ctermfg=darkgray
 highlight TabLineFill cterm=NONE ctermbg=234 ctermfg=darkgray
+highlight Todo cterm=reverse ctermfg=221 ctermbg=black
+highlight ColorColumn cterm=NONE ctermbg=233 ctermfg=none
+
+" mark column 80 and 120+
+let &colorcolumn="80,".join(range(120,999),",")
 
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
 behave mswin
