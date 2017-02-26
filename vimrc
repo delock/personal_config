@@ -83,10 +83,10 @@ set ru
 syntax on
 
 "233=#121212 220=#ffd700 16=#000000
-highlight Comment ctermfg=239
-highlight Repeat ctermfg=255
-highlight Conditional ctermfg=255
-highlight Type ctermfg=255
+highlight Comment ctermfg=240
+highlight Repeat ctermfg=white cterm=bold
+highlight Conditional ctermfg=white cterm=bold
+highlight Type ctermfg=white cterm=bold
 highlight String ctermfg=darkgreen
 highlight Special ctermfg=green
 highlight Number ctermfg=blue

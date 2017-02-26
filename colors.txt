@@ -1,10 +1,10 @@
 # terminal color configuration for this tmux and vim configuration
-default foreground          153,    153,    153
-default bold foreground     153,    153,    153
+default foreground          160,    150,    140
+default bold foreground     180,    170,    160
 default background          0,      0,      0
-default bold background     0,      0,      0
+default bold background     85,     85,     85
 cursor color                0,      138,    255
-ANSI black                  0,      0,      0
+ANSI black                  0,      4,      10
 ANSI black bold             85,     85,     85
 ANSI red                    191,    0,      0
 ANSI red bold               217,    72,     72
@@ -18,5 +18,5 @@ ANSI magenta                170,    0,      85
 ANSI magenta bold           217,    72,     144
 ANSI cyan                   0,      164,    170
 ANSI cyan bold              0       210     217
-ANSI white                  179     179     179
-ANSI white bold             204     204     204
+ANSI white                  210     195     180
+ANSI white bold             255     235     215
