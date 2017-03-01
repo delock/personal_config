@@ -1,5 +1,11 @@
 #!/usr/bin/python2
 
+# add these lines to your ~/.bashrc
+#=() {
+#    python ~/bin/calc.py $@
+#}
+
+
 import sys
 from math import *
 import re
