@@ -112,6 +112,17 @@ highlight TabLine cterm=NONE ctermbg=234 ctermfg=darkgray
 highlight TabLineFill cterm=NONE ctermbg=234 ctermfg=darkgray
 highlight Todo cterm=reverse ctermfg=221 ctermbg=black
 highlight ColorColumn cterm=NONE ctermbg=233 ctermfg=none
+highlight NonText ctermfg=darkgray
+highlight SpecialKey ctermfg=darkgray
+
+set list
+set listchars=tab:»»,nbsp:¬,trail:░,precedes:«,extends:»
+
+highlight LeadingTab ctermfg=238
+match LeadingTab /^\t\t*/
+
+highlight TrailingSpace ctermfg=240
+match TrailingSpace /\s\s*$/
 
 " mark column 80 and 120+
 let &colorcolumn="81,".join(range(121,999),",")
@@ -136,8 +147,10 @@ vnoremap <S-Del> "+x
 vnoremap <C-C> "+y
 vnoremap <C-Insert> "+y
 
-map <F2> :set hlsearch!<C-M>
-map <F3> :set wrap!<C-M>
+set nowrap
+
+"map <F2> :set hlsearch!<C-M>
+"map <F3> :set wrap!<C-M>
 map <F9> ]czz
 map <F11> ]czz
 map <F12> :diffg 2<CR>:diffu<CR>
