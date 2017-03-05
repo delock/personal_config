@@ -1,5 +1,7 @@
 #!/bin/bash
 WINDOW_HEIGHT=`tmux display -p '#{window_height}'`
+# does not count status line height
+WINDOW_HEIGHT=$((WINDOW_HEIGHT-1))
 PANE_HEIGHT=`tmux display -p '#{pane_height}'`
 
 if [ "$1" == "" ]
