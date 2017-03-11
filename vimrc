@@ -54,6 +54,12 @@ filetype plugin indent on    " required
 " Set options and add mapping such that Vim behaves a lot like MS-Windows
 "
 " set the 'cpoptions' to its Vim default
+"set number
+set relativenumber
+set mouse=ni
+map <silent><F6> :let &mouse=(&mouse == "ni"?"":"ni")<CR>:let &relativenumber=1-&relativenumber<CR>
+imap <silent><F6> :let &mouse=(&mouse == "ni"?"":"ni")<CR>:let &relativenumber=1-&relativenumber<CR>
+set ttymouse=xterm2
 set cpo=aABceFs
 set tabstop=8
 set softtabstop=4
@@ -114,6 +120,10 @@ highlight Todo cterm=reverse ctermfg=221 ctermbg=black
 highlight ColorColumn cterm=NONE ctermbg=233 ctermfg=none
 highlight NonText ctermfg=darkgray
 highlight SpecialKey ctermfg=darkgray
+highlight LineNr     ctermfg=darkgray
+highlight CursorLineNr ctermfg=gray
+highlight Visual ctermbg=white ctermfg=black
+
 
 set list
 set listchars=tab:»»,nbsp:¬,trail:░,precedes:«,extends:»
@@ -147,10 +157,10 @@ vnoremap <S-Del> "+x
 vnoremap <C-C> "+y
 vnoremap <C-Insert> "+y
 
-set nowrap
+set wrap
 
 "map <F2> :set hlsearch!<C-M>
-"map <F3> :set wrap!<C-M>
+map <F3> :set wrap!<C-M>
 map <F9> ]czz
 map <F11> ]czz
 map <F12> :diffg 2<CR>:diffu<CR>

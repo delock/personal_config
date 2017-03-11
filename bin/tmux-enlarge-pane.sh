@@ -15,10 +15,9 @@ else
 fi
 fi
 
-if [ $RESIZE_HEIGHT -lt $PANE_HEIGHT ]
+if [ $RESIZE_HEIGHT -gt $PANE_HEIGHT ]
 then
-    RESIZE_HEIGHT=$PANE_HEIGHT
+    tmux resize-pane -y $RESIZE_HEIGHT
 fi
 
-tmux resize-pane -y $RESIZE_HEIGHT
 
