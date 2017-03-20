@@ -56,9 +56,9 @@ filetype plugin indent on    " required
 " set the 'cpoptions' to its Vim default
 "set number
 set relativenumber
+let numstyle=2
 set mouse=ni
-map <silent><F6> :let &mouse=(&mouse == "ni"?"":"ni")<CR>:let &relativenumber=1-&relativenumber<CR>
-imap <silent><F6> :let &mouse=(&mouse == "ni"?"":"ni")<CR>:let &relativenumber=1-&relativenumber<CR>
+map <silent><F6> :let numstyle=(numstyle+1)%3<CR>:let &relativenumber=(numstyle==2)<CR>:let &number=(numstyle==1)<CR>
 set ttymouse=xterm2
 set cpo=aABceFs
 set tabstop=8
