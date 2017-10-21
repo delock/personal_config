@@ -52,6 +52,6 @@ rm .findf_text
 printf "\r                                      \r"
 cat .findf_tags.ns |sort >.findf_tags
 rm .findf_tags.ns
-vi +"set nowrap" .findf_result
+vim +"set nowrap" .findf_result
 rm .findf_tags
 rm .findf_result
