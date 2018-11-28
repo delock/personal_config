@@ -11,12 +11,12 @@ call vundle#begin()
 "call vundle#begin('~/some/path/here')
 
 " let Vundle manage Vundle, required
-Plugin 'VundleVim/Vundle.vim'
+"Plugin 'VundleVim/Vundle.vim'
 
 " The following are examples of different formats supported.
 " Keep Plugin commands between vundle#begin/end.
 " plugin on GitHub repo
-Plugin 'Valloric/YouCompleteMe'
+"Plugin 'Valloric/YouCompleteMe'
 "Plugin 'rdnetto/YCM_Generator'
 "Plugin 'tpope/vim-fugitive'
 " plugin from http://vim-scripts.org/vim/scripts.html
@@ -57,7 +57,7 @@ filetype plugin indent on    " required
 "set number
 set relativenumber
 let numstyle=2
-set mouse=ni
+"set mouse=ni
 map <silent><F6> :let numstyle=(numstyle+1)%3<CR>:let &relativenumber=(numstyle==2)<CR>:let &number=(numstyle==1)<CR>
 set ttymouse=xterm2
 set cpo=aABceFs
@@ -119,7 +119,7 @@ highlight TabLineFill cterm=NONE ctermbg=234 ctermfg=darkgray
 highlight Todo cterm=reverse ctermfg=221 ctermbg=black
 highlight ColorColumn cterm=NONE ctermbg=233 ctermfg=none
 highlight NonText ctermfg=darkgray
-highlight SpecialKey ctermfg=darkgray
+highlight SpecialKey ctermfg=235
 highlight LineNr     ctermfg=darkgray
 highlight CursorLineNr ctermfg=gray
 highlight Visual ctermbg=white ctermfg=black
