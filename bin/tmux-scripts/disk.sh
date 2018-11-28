@@ -1,8 +1,8 @@
 df -h|awk '
-/\/home$/ {
+/\/data\/media/ {
     print "~=" $4
 }
-/\/$/ {
-    print "/=" $4
+/\/mnt\/media_rw\// {
+    print "#=" $4
 }
 '
