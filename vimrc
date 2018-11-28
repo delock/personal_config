@@ -5,8 +5,8 @@ set nocompatible              " be iMproved, required
 filetype off                  " required
 
 " set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+"set rtp+=~/.vim/bundle/Vundle.vim
+"call vundle#begin()
 " alternatively, pass a path where Vundle should install plugins
 "call vundle#begin('~/some/path/here')
 
@@ -33,7 +33,7 @@ call vundle#begin()
 "Plugin 'ascenator/L9', {'name': 'newL9'}
 
 " All of your Plugins must be added before the following line
-call vundle#end()            " required
+"call vundle#end()            " required
 filetype plugin indent on    " required
 " To ignore plugin indent changes, instead use:
 "filetype plugin on
@@ -141,7 +141,7 @@ let &colorcolumn="81,".join(range(121,999),",")
 behave mswin
 
 set backupcopy=yes
-set backupdir=/tmp
+set backupdir=~/tmp
 " backspace and cursor keys wrap to previous/next line
 set backspace=2 whichwrap+=<,>,[,]
 set linebreak
