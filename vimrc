@@ -56,6 +56,7 @@ filetype plugin indent on    " required
 " set the 'cpoptions' to its Vim default
 "set number
 set relativenumber
+set number
 let numstyle=2
 "set mouse=ni
 map <silent><F6> :let numstyle=(numstyle+1)%3<CR>:let &relativenumber=(numstyle==2)<CR>:let &number=(numstyle==1)<CR>
