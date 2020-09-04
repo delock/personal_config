@@ -76,6 +76,7 @@ F24 & >::send {Volume_Up}
 #inputlevel,2
 #MaxThreadsPerHotkey 10
 $Space up::
+	SendLevel, 1
 	if (supressSpace=0)
 		SendInput {Space}
 
@@ -85,17 +86,19 @@ $Space::
     supressSpace=0
     broken = 0
     Input pressKey, L1T0.2
-    ;TrayTip, o%pressKey%o, ooo
+    ;TrayTip, o%pressKey%o, oo
     if(pressKey != "") {
         broken = 1
+    	KeyWait, %pressKey%
         GetKeystate,sDown,Space,P
+	;MsgBox %sDown%
         if (sDown = "U") {
             Send {Blind}{%pressKey%}
             broken = 2
         } else {
 	    supressSpace=1
-            Send {Blind}{Space}{%pressKey%}
-	    broken=2
+            Send {Blind}{F24 DownR}
+	    broken=0
 	}
     } else {
         GetKeystate,sDown,Space,P
@@ -104,17 +107,15 @@ $Space::
             broken = 2
         }
     }
-    ;MsgBox o%pressKey%o%broken%o
     if(broken = 0) {
 	Send {Blind}{F24 DownR}
 	supressSpace=1
 	GetKeystate,spaceDown,Space,P
 	if (spaceDown = "D") {
-		KeyWait, Space
-		;MsgBox, O O%pressKey%o-%A_ThisHotkey%-%A_TimeSinceThisHotkey%
-	        Send {Blind}{F24 up}
-	} else {
-	        Send {Blind}{F24 up}
+            KeyWait, Space
+            Send {Blind}{F24 up}
+        } else {
+            Send {Blind}{F24 up}
         }
     }
     return
