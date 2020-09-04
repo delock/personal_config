@@ -1,0 +1,65 @@
+#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+#InstallKeybdHook
+; #Warn  ; Enable warnings to assist with detecting common errors.
+; not compatible with spaceFN scripts SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
+SetKeyDelay, -1
+SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+
+CapsLock::
+	Send {ESC}
+	SetCapsLockState, alwaysoff
+	return
+
+RCtrl::F11
+
+XButton1::^v
+Ctrl & Space:: Send #{Space}
+
+;mousekey
+Capslock & f::Send {LButton}
+Capslock & s::Send {RButton}
+Capslock & d::Send {MButton}
+Capslock & r::Send {WheelUp}
+Capslock & v::Send {WheelDown}
+Capslock & a::Send {WheelLeft}
+Capslock & g::Send {WheelRight}
+
+;movement
+Capslock & k::Up
+Capslock & j::Down
+Capslock & h::Left
+Capslock & l::Right
+Capslock & i::Home
+Capslock & o::End
+Capslock & u::PgUp
+Capslock & m::PgDn
+
+;editing
+Capslock & `;::Backspace
+Capslock & '::Delete
+Capslock & Backspace::Delete
+
+; copy and paste
+Capslock & y::^c
+Capslock & p::^v
+Capslock & n::^x
+Capslock & [::ScrollLock
+Capslock & ]::Pause
+
+; Fn keys
+Capslock & 1::F1
+Capslock & 2::F2
+Capslock & 3::F3
+Capslock & 4::F4
+Capslock & 5::F5
+Capslock & 6::F6
+Capslock & 7::F7
+Capslock & 8::F8
+Capslock & 9::F9
+Capslock & 0::F10
+Capslock & -::F11
+Capslock & =::F12
+
+; other key mappings
+Capslock & <::send {Volume_Down}
+Capslock & >::send {Volume_Up}
