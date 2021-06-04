@@ -3,7 +3,21 @@ touch .findf_text
 touch .findf_tags
 touch .findf_result
 printf "Please wait while searching... "
-grep -n -H -r --binary-files=without-match --exclude=tags --exclude=*.svn-base --exclude=*.diff --exclude=*.patch --exclude=*.tmp --exclude=all-wcprops --exclude=entries `cat .findf_ignore 2>/dev/null` "$@" * >.findf_text
+grep -n -H -r --binary-files=without-match --exclude=tags --exclude=*.svn-base --exclude-dir=bazel-bin --exclude-dir=bazel-out --exclude=*.diff --exclude=*.patch --exclude=*.tmp --exclude=all-wcprops --exclude=entries `cat .findf_ignore 2>/dev/null` "$@" * >.findf_text.ori
+if [ -z "$FINDF_IGNORE" ]
+then
+  cp .findf_text.ori .findf_text.ignore
+else
+  cat .findf_text.ori|grep -v "$FINDF_IGNORE" > .findf_text.ignore
+fi
+rm .findf_text.ori
+if [ -z "$FINDF_FILTER" ]
+then
+  cp .findf_text.ignore .findf_text
+else
+  cat .findf_text.ignore |grep "$FINDF_FILTER" > .findf_text
+fi
+rm .findf_text.ignore
 if [ ! -s .findf_text ]
 then
 printf "\r                                      \r"
@@ -12,7 +26,23 @@ exit 1
 fi
 rm .findf_tags
 rm .findf_result
-awk '
+awk -v lines=$FINDF_LINES '
+function print_subtotal(strings, subtotal, lines)
+{
+    if (lines==0 || lines=="" || lines > subtotal || -lines > subtotal) {
+      for (i=0;i<subtotal; i++) {
+        printf strings[i]>>".findf_result"
+      }
+    } else if (lines > 0) {
+      for (i=0;i<lines; i++) {
+        printf strings[i]>>".findf_result"
+      }
+    } else {
+      for (i=0;i<-lines; i++) {
+        printf strings[subtotal+lines+i]>>".findf_result"
+      }
+    }
+}
 BEGIN {
     lastpath="";
     find_count=1;
@@ -28,12 +58,15 @@ BEGIN {
     content=substr(rest, index1+1);
     printf "findf%05d\t%s\t%s\n", find_count, path, line>>".findf_tags.ns"
     if(path!=lastpath) {
+        print_subtotal(string, subtotal, lines)
         if (lastpath!="")
             printf "\n" >>".findf_result"
         printf "%s:\n", path >>".findf_result"
         lastpath=path;
+        subtotal=0
     }
-    printf "findf%05d @%s:%s\n", find_count, line, content>>".findf_result"
+    string[subtotal] = sprintf("findf%05d @%s:%s\n", find_count, line, content)
+    subtotal++
     find_count++;
     if(i==0) {
         printf "\b-";
@@ -47,6 +80,7 @@ BEGIN {
     i=(i+1)%4000;
 }
 END {
+    print_subtotal(string, subtotal, lines)
 }' .findf_text
 rm .findf_text
 printf "\r                                      \r"
