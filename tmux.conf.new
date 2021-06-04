@@ -1,0 +1,145 @@
+# term related setting
+set -gq status-utf8 on
+setw -gq utf8 on
+set -gq mouse-utf8 off
+set -g default-terminal "xterm-256color"
+set -sg escape-time 0
+## Terminal emulator window title
+set -g set-titles on
+set -g set-titles-string '#S:#I.#P #W'
+## no buffer is big enough
+set -g history-limit 65536
+
+# prefix-key
+unbind C-a
+set -g prefix C-a
+unbind C-b
+bind C-a send-prefix
+
+set -g bell-action any
+setw -g mouse on
+setw -g monitor-activity on
+
+# pane related options
+## split window
+bind s split-window -v -c "#{pane_current_path}"
+bind v split-window -h -c "#{pane_current_path}"
+unbind %
+
+## switch pane
+unbind j
+unbind k
+### alt-o will move to next pane
+### alt-i will move to previous pane
+### alt hjkl will move to pane left/down/up/right
+#### TODO: remove alt-o and alt-i later
+#### bind -n M-i select-pane -t :.-
+#### bind -n M-o select-pane -t :.+
+
+bind -n M-p rotate-window
+
+bind -n M-h select-pane -L
+bind -n M-l select-pane -R
+bind -n M-j select-pane -D
+bind -n M-k select-pane -U
+
+## resize panes
+bind -n M-Left resize-pane -L
+bind -n M-Right resize-pane -R
+bind -n M-Down resize-pane -D
+bind -n M-Up resize-pane -U
+
+## set pane width to 80 or 120
+bind w resize-pane -x 85
+bind W resize-pane -x 125
+
+bind-key -n WheelUpPane select-pane -t =\;\
+    if-shell -Ft= "#{?pane_in_mode,1,#{mouse_button_flag}}" \
+        "send-keys -M" \
+        "send-keys Up"
+
+bind-key -n WheelDownPane select-pane -t =\;\
+    if-shell -Ft= "#{?pane_in_mode,1,#{mouse_button_flag}}" \
+        "send-keys -M" \
+        "send-keys Down"
+
+## enlarge pane size when necessary
+bind a run-shell "~/bin/tmux-enlarge-pane.sh 100"
+bind b run-shell "~/bin/tmux-enlarge-pane.sh 50"
+bind -n S-MouseDown1Pane select-pane -t =\; run-shell "~/bin/tmux-enlarge-pane.sh 50"
+bind -n S-MouseDown3Pane select-pane -t =\; run-shell "~/bin/tmux-enlarge-pane.sh 100"
+bind -n C-MouseDown1Pane select-pane -t =\; run-shell "~/bin/tmux-enlarge-pane.sh 50"
+bind -n C-MouseDown3Pane select-pane -t =\; run-shell "~/bin/tmux-enlarge-pane.sh 100"
+bind -n MouseDown3Pane select-pane -t =\; run-shell "~/bin/tmux-enlarge-pane.sh 75" \; send-keys -M
+bind -n MouseDown1Pane select-pane -t =\; run-shell "~/bin/tmux-enlarge-pane.sh -l 10" \; send-keys -M
+
+# window related options
+## don't allow rename window name automatically, use c-a , to change window name
+set-option -g allow-rename off
+
+# set title
+bind -n M-a command-prompt "rename-window %%"
+
+
+## switch window
+set -g base-index 1
+
+## mouse right key will open a new window, and drag window will reorder them
+bind -n MouseDown3Status new-window -a -t=
+bind-key -n MouseDrag1Status swap-window -t=
+
+## alt-n will cycle through all windows
+bind -n M-n next-window
+bind -n M-m switch-client -n
+
+# Session related
+## Switch session
+#bind -n M-F1 switchc -tmain
+#bind -n M-F2 switchc -taux
+
+# Copy mode
+## vi-style controls for copy mode
+setw -g mode-keys vi
+bind -n M-PPage    copy-mode -u
+bind -n M-NPage    copy-mode
+bind PPage    copy-mode -u
+bind NPage    copy-mode
+bind -n M-]    paste-buffer
+bind -n MouseDown2Pane select-pane -t =\; paste-buffer
+
+# Notifying if other windows has activities
+setw -g monitor-activity on
+set -g visual-activity on
+set -g message-style 'bg=#303030'
+
+# Window & Pane style
+## Highlighting the active window in status bar
+setw -g window-status-current-style fg=white
+setw -g window-status-current-style bg="#202020"
+setw -g window-status-style fg="#606060"
+setw -g window-status-style bg="#202020"
+
+set -g pane-border-style fg="#404040"
+set -g pane-border-style bg=default
+set -g pane-active-border-style fg="#404040"
+set -g pane-active-border-style bg=default
+
+## set inactive/active window styles
+## make active window a little bit lighter than inactive window
+set -g window-style 'fg=default,bg=default'
+set -g window-active-style 'fg=white,bg=black'
+
+# status bar related
+## do not high light window when there are activity
+set -g status-position bottom
+set -g status-style default
+set -g status-fg "#606060"
+set -g status-bg "#202020"
+set -g status-left-length 40
+set -g status-right-length 200
+set -g status-right '#(gitmux "#{pane_current_path}")#[fg=colour8]|#(~/bin/tmux-status.sh)'
+set -g status-interval 1
+set -g window-status-separator "│"
+
+# start server
+start-server
