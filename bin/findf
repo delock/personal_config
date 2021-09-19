@@ -31,15 +31,15 @@ function print_subtotal(strings, subtotal, lines)
 {
     if (lines==0 || lines=="" || lines > subtotal || -lines > subtotal) {
       for (i=0;i<subtotal; i++) {
-        printf strings[i]>>".findf_result"
+        printf "%s", strings[i]>>".findf_result"
       }
     } else if (lines > 0) {
       for (i=0;i<lines; i++) {
-        printf strings[i]>>".findf_result"
+        printf "%s", strings[i]>>".findf_result"
       }
     } else {
       for (i=0;i<-lines; i++) {
-        printf strings[subtotal+lines+i]>>".findf_result"
+        printf "%s", strings[subtotal+lines+i]>>".findf_result"
       }
     }
 }
