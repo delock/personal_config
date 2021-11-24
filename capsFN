@@ -6,60 +6,103 @@ SetKeyDelay, -1
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 CapsLock::
-	Send {ESC}
 	SetCapsLockState, alwaysoff
+	sleep 200
+	GetKeyState, state, CapsLock, P
+	if state = U
+	{
+		Send, {ESC}
+	}
 	return
+
+Pause::
+	sleep 200
+	GetKeyState, state, Pause, P
+	if state = U
+	{
+		Send, {Space}
+	}
+	return
+
+;$Space::
+;	KeyWait, Space
+;	if A_TimeSinceThisHotkey <= 300
+;	{  
+;		Send, {Space}
+;	}
+;	return
 
 RCtrl::F11
 
 XButton1::^v
 Ctrl & Space:: Send #{Space}
 
+
 ;mousekey
-Capslock & f::Send {LButton}
-Capslock & s::Send {RButton}
-Capslock & d::Send {MButton}
-Capslock & r::Send {WheelUp}
-Capslock & v::Send {WheelDown}
-Capslock & a::Send {WheelLeft}
-Capslock & g::Send {WheelRight}
+#If, GetKeyState("Capslock", "P")
+  or GetKeyState("Pause", "P")
+; or (GetKeyState("Space", "P") and %space_time%!=True)
+f::Send {LButton}
+s::Send {RButton}
+d::Send {MButton}
+r::Send {WheelUp}
+v::Send {WheelDown}
+a::Send {WheelLeft}
+g::Send {WheelRight}
+Home::Send {MButton}
+End::Send {RButton}
+RCtrl::Send {LButton}
+PgUp::Send {WheelUp}
+PgDn::Send {WheelDown}
+Up::MouseMove, 0, -20, 30, R
+Down::MouseMove, 0, 20, 30, R
+Left::MouseMove, -20, 0, 30, R
+Right::MouseMove, 20, 0, 30, R
+LCtrl & Up::MouseMove, 0, -100, 30, R
+LCtrl & Down::MouseMove, 0, 100, 30, R
+LCtrl & Left::MouseMove, -100, 0, 30, R
+LCtrl & Right::MouseMove, 100, 0, 30, R
+
+;F keys
+1::F1
+2::F2
+3::F3
+4::F4
+5::F5
+6::F6
+7::F7
+8::F8
+9::F9
+0::F10
+-::F11
+=::F12
 
 ;movement
-Capslock & k::Up
-Capslock & j::Down
-Capslock & h::Left
-Capslock & l::Right
-Capslock & i::Home
-Capslock & o::End
-Capslock & u::PgUp
-Capslock & m::PgDn
+k::Up
+j::Down
+h::Left
+l::Right
+i::Home
+o::End
+u::PgUp
+m::PgDn
 
 ;editing
-Capslock & `;::Backspace
-Capslock & '::Delete
-Capslock & Backspace::Delete
+`;::Backspace
+'::Delete
+Backspace::Delete
+
+;space
+b::Space
 
 ; copy and paste
-Capslock & y::^c
-Capslock & p::^v
-Capslock & n::^x
-Capslock & [::ScrollLock
-Capslock & ]::Pause
-
-; Fn keys
-Capslock & 1::F1
-Capslock & 2::F2
-Capslock & 3::F3
-Capslock & 4::F4
-Capslock & 5::F5
-Capslock & 6::F6
-Capslock & 7::F7
-Capslock & 8::F8
-Capslock & 9::F9
-Capslock & 0::F10
-Capslock & -::F11
-Capslock & =::F12
+y::^c
+p::^v
+n::^x
+[::ScrollLock
+]::Pause
 
 ; other key mappings
-Capslock & <::send {Volume_Down}
-Capslock & >::send {Volume_Up}
+,::send {Volume_Down}
+.::send {Volume_Up}
+#If
