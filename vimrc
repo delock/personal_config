@@ -1,27 +1,3 @@
-"Vundle section
-"Install Vundle at git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-
-set nocompatible              " be iMproved, required
-filetype off                  " required
-
-" set the runtime path to include Vundle and initialize
-filetype plugin indent on    " required
-" To ignore plugin indent changes, instead use:
-"filetype plugin on
-"
-" Brief help
-" :PluginList       - lists configured plugins
-" :PluginInstall    - installs plugins; append `!` to update or just :PluginUpdate
-" :PluginSearch foo - searches for foo; append `!` to refresh local cache
-" :PluginClean      - confirms removal of unused plugins; append `!` to auto-approve removal
-"
-" see :h vundle for more details or wiki for FAQ
-
-"End of vundle section
-
-
-" Put your non-Plugin stuff after this line
-
 " Set options and add mapping such that Vim behaves a lot like MS-Windows
 "
 " set the 'cpoptions' to its Vim default
@@ -133,6 +109,8 @@ set wrap
 
 "map <F2> :set hlsearch!<C-M>
 map <F3> :set wrap!<C-M>
+map <F4> :qa<CR>
+map <F5> :wqa!<CR>
 map <F9> ]czz
 map <F11> ]czz
 map <F12> :diffg 2<CR>:diffu<CR>
