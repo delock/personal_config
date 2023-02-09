@@ -30,13 +30,13 @@
   grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
   caps a    s    d    f    g    h    j    k    l    ;    '    ret
-  lsft z    x    c    v    b    n    m    ,    .    /    rsft
-  lctl lmet lalt           spc            ralt rmet cmp  rctl
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft      up
+  lctl lmet lalt           spc            ralt rmet cmp  rctl left down rght
 )
 
 (defalias
-  cpf (tap-next-release esc (layer-toggle capital))
-  spaceFN (tap-next-release space (layer-toggle spatial))
+  cpf (tap-hold-next-release 200 esc (layer-toggle capital))
+  spaceFN (tap-hold-next-release 200 space (layer-toggle spatial))
   cpy C-c
   cut C-x
   pst C-v
@@ -52,22 +52,22 @@
   grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
   @cpf a    s    d    f    g    h    j    k    l    ;    '    ret
-  lsft z    x    c    v    b    n    m    ,    .    /    rsft
-  lctl lmet lalt          @spaceFN        ralt rmet cmp  f11
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft      up
+  lctl lmet lalt          @spaceFN        ralt rmet cmp  f11  left down rght
 )
 
 (deflayer spatial
   _    f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12  del
   _    @viq @viw @vie @vir @vit @cpy pgup home end  @pst caps slck nlck
   spc  _    _    _    _    _    left down up   rght ins  del  bspc
-  _    _    _    _    _    _    @cut pgdn vold volu mute _   
-  _    _    _              spc            _    _    _    _   
+  _    _    _    _    _    _    @cut pgdn vold volu mute _         _
+  _    _    _              spc            _    _    _    _    _    _    _
 )
 
 (deflayer capital
   _    f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12  del
   _    @viq @viw @vie @vir @vit @cpy pgup home end  @pst caps slck nlck
   spc  _    _    _    _    _    left down up   rght ins  del  bspc
-  _    _    _    _    _    _    @cut pgdn vold volu mute _   
-  _    _    _              spc            _    _    _    _   
+  _    _    _    _    _    _    @cut pgdn vold volu mute _         _
+  _    _    _              spc            _    _    _    _    _    _    _
 )
