@@ -41,7 +41,7 @@
   cut C-x
   pst C-v
   viq (tap-macro : q a ! enter)
-  viw (tap-macro : w q a ! enter)
+  viw (tap-macro : w a ! enter)
   vir (tap-macro n .)
   vit (tap-macro n . n . n . n . n .)
   vie (tap-macro j .)
