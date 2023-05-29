@@ -88,6 +88,7 @@ let &colorcolumn="81,".join(range(121,999),",")
 " set 'selection', 'selectmode', 'mousemodel' and 'keymodel' for MS-Windows
 behave mswin
 
+set smoothscroll
 set backupcopy=yes
 set backupdir=~/tmp
 " backspace and cursor keys wrap to previous/next line
