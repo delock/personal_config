@@ -3,7 +3,7 @@ set -gq status-utf8 on
 setw -gq utf8 on
 set -gq mouse-utf8 off
 set -g default-terminal "xterm-256color"
-set -sg escape-time 0
+set -sg escape-time 50
 ## Terminal emulator window title
 set -g set-titles on
 set -g set-titles-string '#S:#I.#P #W'
