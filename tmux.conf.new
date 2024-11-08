@@ -13,8 +13,8 @@ set -g history-limit 65536
 # prefix-key
 unbind C-a
 set -g prefix C-a
-unbind C-F12
-set -g prefix2 C-F12
+unbind C-i
+set -g prefix2 C-i
 unbind C-b
 bind C-a send-prefix
 
