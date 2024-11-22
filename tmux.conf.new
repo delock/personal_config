@@ -13,10 +13,10 @@ set -g history-limit 65536
 # prefix-key
 unbind C-a
 set -g prefix C-a
-unbind C-i
-set -g prefix2 C-i
-unbind C-b
-bind C-a send-prefix
+unbind F12
+set -g prefix2 F12
+#unbind C-b
+#bind C-a send-prefix
 
 set -g bell-action any
 setw -g mouse on
