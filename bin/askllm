@@ -1,0 +1,62 @@
+#!/home/akey/anaconda3/envs/ai/bin/python3
+import os
+import sys
+import time
+from openai import OpenAI
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.live import Live
+
+def get_env_var(var_name, default=None):
+    """Helper function to get environment variables."""
+    return os.getenv(var_name, default)
+
+def initialize_openai_client():
+    """Initialize the OpenAI client with environment variables."""
+    api_key = get_env_var("OPENAI_API_KEY")
+    base_url = get_env_var("OPENAI_API_URL", "https://api.deepseek.com")
+    model_name = get_env_var("OPENAI_API_MODEL", "deepseek-chat")
+    
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set.")
+    
+    return OpenAI(api_key=api_key, base_url=base_url), model_name
+
+def ask_deepseek(client, model_name, question):
+    """Send a question to DeepSeek and return the response."""
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant"},
+            {"role": "user", "content": question},
+        ],
+        stream=True
+    )
+    return response
+
+def stream_and_print_response(response):
+    """Stream and print the response in a beautified markdown format."""
+    console = Console()
+    markdown_content = ""
+    
+    with Live(vertical_overflow="visible") as live:
+        for chunk in response:
+            if chunk.choices:
+                chunk_content = chunk.choices[0].delta.content or ""
+                markdown_content += chunk_content
+                markdown = Markdown(markdown_content)
+                live.update(markdown)
+                time.sleep(0.05)  # Small delay to simulate streaming effect
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python deepseek_cli.py <your_question>")
+        sys.exit(1)
+
+    question = " ".join(sys.argv[1:])
+    client, model_name = initialize_openai_client()
+    response = ask_deepseek(client, model_name, question)
+    stream_and_print_response(response)
+
+if __name__ == "__main__":
+    main()
