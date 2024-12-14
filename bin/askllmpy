@@ -4,102 +4,105 @@ import sys
 import json
 import signal
 from openai import OpenAI
+from googlesearch import search
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
-from duckduckgo_search import DDGS
 
-# Initialize Rich console for beautified output
+# Initialize Rich console
 console = Console()
 
-# Get environment variables
+# Environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_URL = os.getenv("OPENAI_API_URL")
 OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL")
 
+# Check if environment variables are set
+if not OPENAI_API_KEY or not OPENAI_API_URL or not OPENAI_API_MODEL:
+    console.print("[bold red]Error:[/bold red] Environment variables OPENAI_API_KEY, OPENAI_API_URL, and OPENAI_API_MODEL must be set.")
+    sys.exit(1)
+
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_URL)
 
-# Signal handler for Ctrl+C
-def signal_handler(sig, frame):
+def handle_interrupt(signum, frame):
     console.print("\nGoodbye!")
     sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
-
-# Function to decide if web search is needed
-def decide_web_search(question):
+def query_deepseek(messages, stream=False):
     try:
         response = client.chat.completions.create(
             model=OPENAI_API_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that outputs JSON. Example JSON format: {\"web_search_needed\": true, \"keywords\": \"example keyword\"}"},
-                {"role": "user", "content": f"Should I perform a web search for the question: '{question}'? If yes, provide the keywords for the search. Output in JSON format."},
-            ],
-            response_format={"type": "json_object"},
-            max_tokens=100
+            messages=messages,
+            stream=stream
         )
-        decision = json.loads(response.choices[0].message.content)
-        return decision.get("web_search_needed", False), decision.get("keywords", "")
-    except (json.JSONDecodeError, KeyError):
-        return False, ""
-
-# Function to perform web search
-def perform_web_search(keywords):
-    results = DDGS().text(keywords, max_results=5)
-    return results
-
-# Function to get answer from DeepSeek
-def get_answer(question, references=None):
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant"},
-        {"role": "user", "content": question},
-    ]
-    if references:
-        messages.append({"role": "user", "content": f"Here are some references: {references}"})
-    
-    response = client.chat.completions.create(
-        model=OPENAI_API_MODEL,
-        messages=messages,
-        stream=True
-    )
-    
-    return response
-
-# Function to stream and beautify output
-def stream_and_beautify(response):
-    with Live(vertical_overflow="visible") as live:
-        full_response = ""
-        for chunk in response:
-            if chunk.choices and chunk.choices[0].delta.content:
-                content = chunk.choices[0].delta.content
-                full_response += content
-                markdown_content = Markdown(full_response)
-                live.update(markdown_content)
-
-# Main function
-def main():
-    if len(sys.argv) < 2:
-        console.print("Usage: python deepseek_cli.py <your question>")
+        if stream:
+            return response
+        else:
+            return response.choices[0].message.content
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {e}")
         sys.exit(1)
 
+def decide_web_search(question):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that decides if a web search is needed. Output in JSON format."},
+        {"role": "user", "content": f"Question: {question}\n\nOutput JSON format: {{\"need_search\": true/false, \"keywords\": \"search keywords\"}}"}
+    ]
+    response = query_deepseek(messages)
+    response = response.replace("```json", "").replace("```", "")
+    try:
+        decision = json.loads(response)
+        return decision.get("need_search", False), decision.get("keywords", "")
+    except json.JSONDecodeError:
+        return False, ""
+
+def perform_web_search(keywords):
+    search_results = []
+    for result in search(keywords, advanced=True, num_results=5):
+        search_results.append({
+            "title": result.title,
+            "url": result.url,
+            "description": result.description
+        })
+    return search_results
+
+def beautify_and_stream_output(response):
+    markdown_content = ""
+    with Live(Markdown(markdown_content), auto_refresh=False, vertical_overflow="visible") as live:
+        for chunk in response:
+            if chunk.choices:
+                content = chunk.choices[0].delta.content
+                markdown_content += content
+                live.update(Markdown(markdown_content), refresh=True)
+
+def main():
+    signal.signal(signal.SIGINT, handle_interrupt)
+
     question = " ".join(sys.argv[1:])
+    if not question:
+        console.print("[bold red]Error:[/bold red] No question provided.")
+        sys.exit(1)
 
-    # Decide if web search is needed
-    web_search_needed, keywords = decide_web_search(question)
+    need_search, keywords = decide_web_search(question)
 
-    if web_search_needed:
-        console.print(f"Performing web search for keywords: {keywords}")
+    if need_search:
+        console.print(f"[bold yellow]Web search needed for keywords:[/bold yellow] {keywords}")
         search_results = perform_web_search(keywords)
-        references = "\n".join([result["body"] for result in search_results])
+        references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": f"{question}\n\nReferences:\n{references}"}
+        ]
     else:
-        references = None
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": question}
+        ]
 
-    # Get answer from DeepSeek
-    response = get_answer(question, references)
-
-    # Stream and beautify the output
-    stream_and_beautify(response)
+    console.print("[bold green]Generating answer...[/bold green]")
+    response = query_deepseek(messages, stream=True)
+    beautify_and_stream_output(response)
 
 if __name__ == "__main__":
     main()
