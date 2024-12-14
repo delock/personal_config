@@ -1,0 +1,105 @@
+#!/home/akey/anaconda3/envs/ai/bin/python
+import os
+import sys
+import json
+import signal
+from openai import OpenAI
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.live import Live
+from duckduckgo_search import DDGS
+
+# Initialize Rich console for beautified output
+console = Console()
+
+# Get environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_URL = os.getenv("OPENAI_API_URL")
+OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL")
+
+# Initialize OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_URL)
+
+# Signal handler for Ctrl+C
+def signal_handler(sig, frame):
+    console.print("\nGoodbye!")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+# Function to decide if web search is needed
+def decide_web_search(question):
+    try:
+        response = client.chat.completions.create(
+            model=OPENAI_API_MODEL,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that outputs JSON. Example JSON format: {\"web_search_needed\": true, \"keywords\": \"example keyword\"}"},
+                {"role": "user", "content": f"Should I perform a web search for the question: '{question}'? If yes, provide the keywords for the search. Output in JSON format."},
+            ],
+            response_format={"type": "json_object"},
+            max_tokens=100
+        )
+        decision = json.loads(response.choices[0].message.content)
+        return decision.get("web_search_needed", False), decision.get("keywords", "")
+    except (json.JSONDecodeError, KeyError):
+        return False, ""
+
+# Function to perform web search
+def perform_web_search(keywords):
+    results = DDGS().text(keywords, max_results=5)
+    return results
+
+# Function to get answer from DeepSeek
+def get_answer(question, references=None):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant"},
+        {"role": "user", "content": question},
+    ]
+    if references:
+        messages.append({"role": "user", "content": f"Here are some references: {references}"})
+    
+    response = client.chat.completions.create(
+        model=OPENAI_API_MODEL,
+        messages=messages,
+        stream=True
+    )
+    
+    return response
+
+# Function to stream and beautify output
+def stream_and_beautify(response):
+    with Live(vertical_overflow="visible") as live:
+        full_response = ""
+        for chunk in response:
+            if chunk.choices and chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                full_response += content
+                markdown_content = Markdown(full_response)
+                live.update(markdown_content)
+
+# Main function
+def main():
+    if len(sys.argv) < 2:
+        console.print("Usage: python deepseek_cli.py <your question>")
+        sys.exit(1)
+
+    question = " ".join(sys.argv[1:])
+
+    # Decide if web search is needed
+    web_search_needed, keywords = decide_web_search(question)
+
+    if web_search_needed:
+        console.print(f"Performing web search for keywords: {keywords}")
+        search_results = perform_web_search(keywords)
+        references = "\n".join([result["body"] for result in search_results])
+    else:
+        references = None
+
+    # Get answer from DeepSeek
+    response = get_answer(question, references)
+
+    # Stream and beautify the output
+    stream_and_beautify(response)
+
+if __name__ == "__main__":
+    main()
