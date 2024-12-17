@@ -1,3 +1,4 @@
+#!/home/akey/anaconda3/envs/ai/bin/python
 import os
 import sys
 import requests
@@ -10,7 +11,7 @@ from urllib.parse import urlparse
 
 console = Console()
 
-def download_pdf(url, cache_dir=".cache"):
+def download_pdf(url, cache_dir="~/.cache/chatwithpdf"):
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
     
