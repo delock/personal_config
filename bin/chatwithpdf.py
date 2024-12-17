@@ -1,0 +1,104 @@
+import os
+import sys
+import requests
+import PyPDF2
+from openai import OpenAI
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.live import Live
+from urllib.parse import urlparse
+
+console = Console()
+
+def download_pdf(url, cache_dir=".cache"):
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+    
+    parsed_url = urlparse(url)
+    filename = os.path.join(cache_dir, os.path.basename(parsed_url.path))
+    
+    if os.path.exists(filename):
+        console.print(f"Using cached file: {filename}")
+        return filename
+    
+    console.print(f"Downloading PDF from {url}...")
+    response = requests.get(url, stream=True)
+    with open(filename, 'wb') as file:
+        for chunk in response.iter_content(chunk_size=8192):
+            file.write(chunk)
+    
+    console.print(f"PDF downloaded and saved as {filename}")
+    return filename
+
+def extract_text_from_pdf(pdf_path):
+    console.print(f"Extracting text from PDF: {pdf_path}")
+    text = ""
+    with open(pdf_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        for page in reader.pages:
+            text += page.extract_text()
+    return text
+
+def initialize_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    base_url = os.getenv("OPENAI_API_URL")
+    model_name = os.getenv("OPENAI_API_MODEL")
+    
+    if not api_key or not base_url or not model_name:
+        console.print("Error: Please set OPENAI_API_KEY, OPENAI_API_URL, and OPENAI_API_MODEL environment variables.")
+        sys.exit(1)
+    
+    return OpenAI(api_key=api_key, base_url=base_url), model_name
+
+def ask_question(client, model_name, content, question):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant"},
+        {"role": "user", "content": content[:60000] if len(content) > 60000 else content},
+        {"role": "user", "content": question},
+    ]
+    
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        stream=True
+    )
+    
+    return response
+
+def main():
+    if len(sys.argv) != 2:
+        console.print("Usage: python pdf_qa.py <pdf_filename_or_url>")
+        sys.exit(1)
+    
+    input_arg = sys.argv[1]
+    pdf_path = input_arg
+    
+    if input_arg.startswith("http://") or input_arg.startswith("https://"):
+        pdf_path = download_pdf(input_arg)
+    
+    if not os.path.exists(pdf_path):
+        console.print(f"Error: PDF file not found: {pdf_path}")
+        sys.exit(1)
+    
+    content = extract_text_from_pdf(pdf_path)
+    client, model_name = initialize_openai_client()
+    
+    console.print("Welcome to the PDF Question Answering CLI!")
+    console.print("Type your question below. Press Ctrl-C to exit.")
+    
+    try:
+        while True:
+            question = console.input("[bold green]Enter your question:[/bold green] ")
+            response = ask_question(client, model_name, content, question)
+            
+            with Live(vertical_overflow="visible") as live:
+                markdown_text = ""
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        markdown_text += chunk.choices[0].delta.content
+                        live.update(Markdown(markdown_text))
+    except KeyboardInterrupt:
+        console.print("\nGoodbye!")
+
+if __name__ == "__main__":
+    main()
