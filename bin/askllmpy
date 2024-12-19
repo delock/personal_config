@@ -1,8 +1,9 @@
-#!/home/akey/anaconda3/envs/ai/bin/python
+#!/home/gma/miniforge3/bin/python
 import os
 import sys
 import json
 import signal
+import time
 from openai import OpenAI
 from googlesearch import search
 from rich.console import Console
@@ -59,7 +60,7 @@ def decide_web_search(question):
 
 def perform_web_search(keywords):
     search_results = []
-    for result in search(keywords, advanced=True, num_results=5):
+    for result in search(keywords, advanced=True, num_results=20):
         search_results.append({
             "title": result.title,
             "url": result.url,
@@ -69,12 +70,18 @@ def perform_web_search(keywords):
 
 def beautify_and_stream_output(response):
     markdown_content = ""
+    # update live every 1 seconds
+    t0 = time.time()
+    interval = 1.0
     with Live(Markdown(markdown_content), auto_refresh=False, vertical_overflow="visible") as live:
         for chunk in response:
             if chunk.choices:
                 content = chunk.choices[0].delta.content
                 markdown_content += content
-                live.update(Markdown(markdown_content), refresh=True)
+                if time.time() - t0 > interval:
+                    live.update(Markdown(markdown_content), refresh=True)
+                    t0 = time.time()
+        live.update(Markdown(markdown_content), refresh=True)
 
 def main():
     signal.signal(signal.SIGINT, handle_interrupt)
