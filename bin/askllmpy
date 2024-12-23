@@ -9,6 +9,8 @@ from googlesearch import search
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
+import requests
+from bs4 import BeautifulSoup
 
 # Initialize Rich console
 console = Console()
@@ -58,21 +60,70 @@ def decide_web_search(question):
     except json.JSONDecodeError:
         return False, ""
 
-def perform_web_search(keywords):
+def pick_search_link(question, search_results):
+    references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that decides which search result is most relevant to your question.  Output in JSON format."},
+        {"role": "user", "content": f"Question: {question}\nSearch results {references}\n\nOutput JSON format: {{\"url\": url}}"}
+    ]
+    response = query_deepseek(messages)
+    response = response.replace("```json", "").replace("```", "")
+    try:
+        decision = json.loads(response)
+        return decision.get("url", "")
+    except json.JSONDecodeError:
+        return False, ""
+
+# give web page scrape text, and key words, extract relevant part from text
+# according to keywords, using deepseek api
+def extract_relevant_text(text, keywords):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that extracts relevant text from a web page. Keep text less than 1000 words. Output in JSON format."},
+        {"role": "user", "content": f"Text: {text}\nKeywords: {keywords}\n\nOutput JSON format: {{\"relevant_text\": \"extracted text\"}}"}
+    ]
+    response = query_deepseek(messages)
+    response = response.replace("```json", "").replace("```", "")
+    try:
+        extraction = json.loads(response)
+        return extraction.get("relevant_text", "")
+    except json.JSONDecodeError:
+        return ""
+
+def strip_empty_lines(text):
+    # Split the text into lines, filter out empty lines, and join them back
+    return '\n'.join([line for line in text.splitlines() if line.strip()])
+
+def perform_web_search(keywords, question):
     search_results = []
     for result in search(keywords, advanced=True, num_results=20):
+        text = result.description
         search_results.append({
             "title": result.title,
             "url": result.url,
-            "description": result.description
+            "description": text
         })
-    return search_results
+    url = pick_search_link(question, search_results)
+    try:
+        print ("Extracting the most relvant url")
+        response = requests.get(url)
+        html_content = response.text
+        soup = BeautifulSoup(html_content, "html.parser")
+        text = strip_empty_lines(soup.get_text())
+        #print ("Extracting the most relvant contents")
+        #text = extract_relevant_text(text, keywords)
+        #print (text)
+    except Exception as e:
+        text = ""
+        pass
+    return search_results, text
 
 def beautify_and_stream_output(response):
     markdown_content = ""
     # update live every 1 seconds
     t0 = time.time()
     interval = 1.0
+    last_mark = 0
+    mark_step = 16
     with Live(Markdown(markdown_content), auto_refresh=False, vertical_overflow="visible") as live:
         for chunk in response:
             if chunk.choices:
@@ -95,11 +146,11 @@ def main():
 
     if need_search:
         console.print(f"[bold yellow]Web search needed for keywords:[/bold yellow] {keywords}")
-        search_results = perform_web_search(keywords)
+        search_results, text = perform_web_search(keywords, question)
         references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
         messages = [
             {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": f"{question}\n\nReferences:\n{references}"}
+            {"role": "user", "content": f"{question}\n\nReferences:\n{references}\n\nExtracted text:\n{text}"}
         ]
     else:
         messages = [

@@ -1,0 +1,76 @@
+#!/home/akey/anaconda3/envs/ai/bin/python
+import os
+import sys
+import argparse
+import requests
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.live import Live
+from openai import OpenAI
+
+def get_file_content(filename_or_url):
+    if filename_or_url.startswith("http://") or filename_or_url.startswith("https://"):
+        response = requests.get(filename_or_url)
+        response.raise_for_status()
+        return response.text
+    else:
+        with open(filename_or_url, 'r') as file:
+            return file.read()
+
+def main():
+    parser = argparse.ArgumentParser(description="CLI program to ask questions about a text file.")
+    parser.add_argument("filename_or_url", help="Path to the text file or a download link")
+    args = parser.parse_args()
+
+    console = Console()
+
+    try:
+        content = get_file_content(args.filename_or_url)
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {e}")
+        sys.exit(1)
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    base_url = os.getenv("OPENAI_API_URL")
+    model_name = os.getenv("OPENAI_API_MODEL")
+
+    if not api_key or not base_url or not model_name:
+        console.print("[bold red]Error:[/bold red] Missing environment variables. Please set OPENAI_API_KEY, OPENAI_API_URL, and OPENAI_API_MODEL.")
+        sys.exit(1)
+
+    client = OpenAI(api_key=api_key, base_url=base_url)
+
+    console.print("[bold green]Welcome to the Text File Question Answering Tool![/bold green]")
+    console.print(f"Loaded content from: [bold]{args.filename_or_url}[/bold]")
+
+    while True:
+        try:
+            question = console.input("[bold blue]Ask a question about the text:[/bold blue] ")
+            prompt = f"{content}\n\nQuestion: {question}"
+
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ],
+                stream=True
+            )
+
+            with Live(vertical_overflow="visible") as live:
+                answer = ""
+                for chunk in response:
+                    if chunk.choices:
+                        delta = chunk.choices[0].delta
+                        answer += delta.content
+                        live.update(Markdown(answer))
+
+        except KeyboardInterrupt:
+            console.print("\n[bold green]Goodbye![/bold green]")
+            sys.exit(0)
+        except Exception as e:
+            console.print(f"[bold red]Error:[/bold red] {e}")
+            continue
+
+if __name__ == "__main__":
+    main()
