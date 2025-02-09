@@ -1,4 +1,4 @@
-#!/home/gma/miniforge3/bin/python
+#!/home/akey/anaconda3/envs/ai/bin/python
 import os
 import sys
 import json

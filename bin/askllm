@@ -1,62 +1,93 @@
-#!/home/akey/anaconda3/envs/ai/bin/python3
-import os
+#!/bin/bash
+
+# Check if the required environment variables are set
+if [[ -z "$OPENAI_API_KEY" ]]; then
+    echo "Error: OPENAI_API_KEY environment variable is not set."
+    exit 1
+fi
+
+if [[ -z "$OPENAI_API_URL" ]]; then
+    echo "Error: OPENAI_API_URL environment variable is not set."
+    exit 1
+fi
+
+if [[ -z "$OPENAI_API_MODEL" ]]; then
+    echo "Error: OPENAI_API_MODEL environment variable is not set."
+    exit 1
+fi
+
+# Construct the full API URL
+API_URL="${OPENAI_API_URL}/chat/completions"
+
+# Function to send a request to DeepSeek
+send_request() {
+    local question="$1"
+    local response
+
+    response=$(curl -s -X POST "$API_URL" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $OPENAI_API_KEY" \
+        --data-raw '{
+            "messages": [
+                {
+                    "content": "You are a helpful assistant",
+                    "role": "system"
+                },
+                {
+                    "content": "'"$question"'",
+                    "role": "user"
+                }
+            ],
+            "model": "'"$OPENAI_API_MODEL"'",
+            "frequency_penalty": 0,
+            "max_tokens": 2048,
+            "presence_penalty": 0,
+            "response_format": {
+                "type": "text"
+            },
+            "stop": null,
+            "stream": false,
+            "stream_options": null,
+            "temperature": 1,
+            "top_p": 1,
+            "tools": null,
+            "tool_choice": "none",
+            "logprobs": false,
+            "top_logprobs": null
+        }')
+
+    echo "$response"
+}
+
+# Function to beautify the markdown output using Python's rich package
+beautify_markdown() {
+    local markdown_text="$1"
+    echo "$markdown_text" | python3 -c '
 import sys
-import time
-from openai import OpenAI
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.live import Live
 
-def get_env_var(var_name, default=None):
-    """Helper function to get environment variables."""
-    return os.getenv(var_name, default)
+console = Console()
+markdown = Markdown(sys.stdin.read())
+console.print(markdown)
+'
+}
 
-def initialize_openai_client():
-    """Initialize the OpenAI client with environment variables."""
-    api_key = get_env_var("OPENAI_API_KEY")
-    base_url = get_env_var("OPENAI_API_URL", "https://api.deepseek.com")
-    model_name = get_env_var("OPENAI_API_MODEL", "deepseek-chat")
-    
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY environment variable is not set.")
-    
-    return OpenAI(api_key=api_key, base_url=base_url), model_name
+# Main function
+main() {
+    # Join all arguments into a single question string
+    question="$*"
 
-def ask_deepseek(client, model_name, question):
-    """Send a question to DeepSeek and return the response."""
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant"},
-            {"role": "user", "content": question},
-        ],
-        stream=True
-    )
-    return response
+    # Send the question to DeepSeek
+    response=$(send_request "$question")
 
-def stream_and_print_response(response):
-    """Stream and print the response in a beautified markdown format."""
-    console = Console()
-    markdown_content = ""
-    
-    with Live(vertical_overflow="visible") as live:
-        for chunk in response:
-            if chunk.choices:
-                chunk_content = chunk.choices[0].delta.content or ""
-                markdown_content += chunk_content
-                markdown = Markdown(markdown_content)
-                live.update(markdown)
-                time.sleep(0.05)  # Small delay to simulate streaming effect
+    # Extract the answer from the response
+    answer=$(echo "$response" | jq -r '.choices[0].message.content')
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python deepseek_cli.py <your_question>")
-        sys.exit(1)
+    # Beautify and print the answer
+    beautify_markdown "$answer"
+}
 
-    question = " ".join(sys.argv[1:])
-    client, model_name = initialize_openai_client()
-    response = ask_deepseek(client, model_name, question)
-    stream_and_print_response(response)
-
-if __name__ == "__main__":
-    main()
+# Run the main function with all arguments
+main "$@"

@@ -1,6 +1,14 @@
 " Set options and add mapping such that Vim behaves a lot like MS-Windows
 "
 " set the 'cpoptions' to its Vim default
+" plugins
+call plug#begin()
+Plug 'ludovicchabant/vim-gutentags'
+Plug 'preservim/tagbar'
+call plug#end()
+
+nmap <F8> :TagbarToggle<CR>
+
 "set number
 set relativenumber
 set number

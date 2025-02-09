@@ -69,7 +69,8 @@ def main():
     input_arg = sys.argv[1]
 
     if input_arg.startswith("http://") or input_arg.startswith("https://"):
-        content = fetch_content_from_url(input_arg)
+        # make it less than 60000 tokens
+        content = fetch_content_from_url(input_arg)[:120000]
     else:
         try:
             with open(input_arg, 'r') as file:
