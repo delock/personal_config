@@ -1,4 +1,4 @@
-#!/home/akey/anaconda3/envs/ai/bin/python
+#!/home/gma/miniforge3/bin/python
 import os
 import sys
 import argparse

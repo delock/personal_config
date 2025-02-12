@@ -1,4 +1,4 @@
-#!/home/akey/anaconda3/envs/ai/bin/python
+#!/home/gma/miniforge3/bin/python
 import os
 import sys
 import json
@@ -19,6 +19,7 @@ console = Console()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_URL = os.getenv("OPENAI_API_URL")
 OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL")
+OPENAI_API_REASONER = os.getenv("OPENAI_API_REASONER")
 
 # Check if environment variables are set
 if not OPENAI_API_KEY or not OPENAI_API_URL or not OPENAI_API_MODEL:
@@ -32,10 +33,10 @@ def handle_interrupt(signum, frame):
     console.print("\nGoodbye!")
     sys.exit(0)
 
-def query_deepseek(messages, stream=False):
+def query_deepseek(messages, stream=False, need_reasoning=False):
     try:
         response = client.chat.completions.create(
-            model=OPENAI_API_MODEL,
+            model=OPENAI_API_MODEL if not need_reasoning else OPENAI_API_REASONER,
             messages=messages,
             stream=stream
         )
@@ -118,6 +119,7 @@ def perform_web_search(keywords, question):
     return search_results, text
 
 def beautify_and_stream_output(response):
+    cot_content = ""
     markdown_content = ""
     # update live every 1 seconds
     t0 = time.time()
@@ -128,16 +130,30 @@ def beautify_and_stream_output(response):
         for chunk in response:
             if chunk.choices:
                 content = chunk.choices[0].delta.content
-                markdown_content += content
+                # check if reasoning_content attr exists
+                if hasattr(chunk.choices[0].delta, 'reasoning_content'):
+                    reasoning_content = chunk.choices[0].delta.reasoning_content
+                    if reasoning_content != None:
+                        cot_content += reasoning_content
+                else:
+                  if content != None:
+                      markdown_content += f'{content}'
                 if time.time() - t0 > interval:
-                    live.update(Markdown(markdown_content), refresh=True)
+                    # quote every line in cot_content
+                    quote_cot_content = "\n".join([f"> {line}" for line in cot_content.split("\n")])
+                    live.update(Markdown(f'{quote_cot_content}\n{markdown_content}'), refresh=True)
                     t0 = time.time()
         live.update(Markdown(markdown_content), refresh=True)
 
 def main():
     signal.signal(signal.SIGINT, handle_interrupt)
 
-    question = " ".join(sys.argv[1:])
+    if sys.argv[1] == '-r':
+        need_reasoning = True;
+        question = " ".join(sys.argv[2:])
+    else:
+        need_reasoning = False;
+        question = " ".join(sys.argv[1:])
     if not question:
         console.print("[bold red]Error:[/bold red] No question provided.")
         sys.exit(1)
@@ -159,7 +175,7 @@ def main():
         ]
 
     console.print("[bold green]Generating answer...[/bold green]")
-    response = query_deepseek(messages, stream=True)
+    response = query_deepseek(messages, stream=True, need_reasoning=need_reasoning)
     beautify_and_stream_output(response)
 
 if __name__ == "__main__":
