@@ -7,10 +7,16 @@ import time
 from openai import OpenAI
 from googlesearch import search
 from rich.console import Console
-from rich.markdown import Markdown
-from rich.live import Live
+from rich.markdown import Markdown as richMarkdown
+#from rich.live import Live
 import requests
 from bs4 import BeautifulSoup
+from textual.app import App, ComposeResult
+from textual.binding import Binding
+from textual.reactive import var
+from textual.widgets import Footer, Markdown
+from textual.worker import Worker, get_current_worker
+from textual import work
 
 # Initialize Rich console
 console = Console()
@@ -28,10 +34,6 @@ if not OPENAI_API_KEY or not OPENAI_API_URL or not OPENAI_API_MODEL:
 
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_URL)
-
-def handle_interrupt(signum, frame):
-    console.print("\nGoodbye!")
-    sys.exit(0)
 
 def query_deepseek(messages, stream=False, need_reasoning=False):
     try:
@@ -118,15 +120,33 @@ def perform_web_search(keywords, question):
         pass
     return search_results, text
 
-def beautify_and_stream_output(response):
-    cot_content = ""
+class MyMarkdown(Markdown):
+    BINDINGS = [
+        Binding("k", "scroll_down", "Scroll Up"),
+        Binding("j", "scroll_up", "Scroll Down"),
+    ]
+
+class MarkdownApp(App):
+    """A simple Markdown viewer application."""
+
+    BINDINGS = [
+        #Binding("k", "back", "Back", tooltip="Navigate back"),
+        #Binding("j", "forward", "Forward", tooltip="Navigate forward"),
+        Binding("q", "exit", "Exit", tooltip="Exit this app"),
+    ]
+
     markdown_content = ""
-    # update live every 1 seconds
-    t0 = time.time()
-    interval = 1.0
-    last_mark = 0
-    mark_step = 16
-    with Live(Markdown(markdown_content), auto_refresh=False, vertical_overflow="visible") as live:
+    def __init__(self) -> None:
+        self.output = MyMarkdown()
+        """Initialize the MarkdownApp."""
+        super().__init__()
+
+    def beautify_and_stream_output(self, response):
+        cot_content = ""
+        t0 = time.time()
+        interval = 1.0
+        last_mark = 0
+        mark_step = 16
         for chunk in response:
             if chunk.choices:
                 content = chunk.choices[0].delta.content
@@ -137,46 +157,94 @@ def beautify_and_stream_output(response):
                         cot_content += reasoning_content
                 else:
                   if content != None:
-                      markdown_content += f'{content}'
+                      self.markdown_content += f'{content}'
                 if time.time() - t0 > interval:
                     # quote every line in cot_content
-                    quote_cot_content = "\n".join([f"> {line}" for line in cot_content.split("\n")])
-                    live.update(Markdown(f'{quote_cot_content}\n{markdown_content}'), refresh=True)
+                    quote_cot_content = "" if cot_content=="" else "\n".join([f"> {line}" for line in cot_content.split("\n")])
+                    self.call_from_thread(self.output.update, (f'{quote_cot_content}\n{self.markdown_content}'))
+                    # scroll to the bottom
+                    self.output.scroll_y = self.output.max_scroll_y
                     t0 = time.time()
-        live.update(Markdown(markdown_content), refresh=True)
+        self.call_from_thread(self.output.update, (self.markdown_content))
 
-def main():
-    signal.signal(signal.SIGINT, handle_interrupt)
+    @work(thread=True)
+    def do_work(self):
+        if len(sys.argv) < 2:
+            self.output.update("No question provided.")
+            return
+        if sys.argv[1] == '-r':
+            need_reasoning = True;
+            question = " ".join(sys.argv[2:])
+        else:
+            need_reasoning = False;
+            question = " ".join(sys.argv[1:])
+        if not question:
+            self.call_from_thread(self.output.update, ("Error: No question provided."))
 
-    if sys.argv[1] == '-r':
-        need_reasoning = True;
-        question = " ".join(sys.argv[2:])
-    else:
-        need_reasoning = False;
-        question = " ".join(sys.argv[1:])
-    if not question:
-        console.print("[bold red]Error:[/bold red] No question provided.")
-        sys.exit(1)
+        self.call_from_thread(self.output.update, (f"Analyzing question... ({question})"))
+        need_search, keywords = decide_web_search(question)
 
-    need_search, keywords = decide_web_search(question)
+        if need_search:
+            self.call_from_thread(self.output.update, (f"Web search needed for keywords: {keywords}"))
+            search_results, text = perform_web_search(keywords, question)
+            references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": f"{question}\n\nReferences:\n{references}\n\nExtracted text:\n{text}"}
+            ]
+        else:
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": question}
+            ]
 
-    if need_search:
-        console.print(f"[bold yellow]Web search needed for keywords:[/bold yellow] {keywords}")
-        search_results, text = perform_web_search(keywords, question)
-        references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": f"{question}\n\nReferences:\n{references}\n\nExtracted text:\n{text}"}
-        ]
-    else:
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": question}
-        ]
+        self.call_from_thread(self.output.update, ("Generating answer..."))
+        response = query_deepseek(messages, stream=True, need_reasoning=need_reasoning)
+        self.beautify_and_stream_output(response)
 
-    console.print("[bold green]Generating answer...[/bold green]")
-    response = query_deepseek(messages, stream=True, need_reasoning=need_reasoning)
-    beautify_and_stream_output(response)
+
+    def compose(self) -> ComposeResult:
+        #yield Footer()
+        yield self.output
+
+    async def on_mount(self) -> None:
+        self.do_work()
+
+    #def on_markdown_viewer_navigator_updated(self) -> None:
+        #"""Refresh bindings for forward / back when the document changes."""
+        #self.refresh_bindings()
+
+    #def action_toggle_table_of_contents(self) -> None:
+        #"""Toggles display of the table of contents."""
+        #self.markdown.show_table_of_contents = (
+            #not self.markdown.show_table_of_contents
+        #)
+
+    async def action_back(self) -> None:
+        """Navigate backwards."""
+        self.output.scroll_up()
+
+    async def action_forward(self) -> None:
+        """Navigate forwards."""
+        self.output.scroll_down()
+
+    async def action_exit(self) -> None:
+        """Exit the application."""
+        #if self.markdown_content != "":
+            #console.print(richMarkdown(self.markdown_content))
+        self.exit()
+
+    def check_action(self, action: str, _) -> bool | None:
+        """Check if certain actions can be performed."""
+        #if action == "forward" and self.markdown.navigator.end:
+            ## Disable footer link if we can't go forward
+            #return None
+        #if action == "back" and self.markdown.navigator.start:
+            ## Disable footer link if we can't go backward
+            #return None
+        # All other keys display as normal
+        return True
 
 if __name__ == "__main__":
-    main()
+    markdown = MarkdownApp()
+    markdown.run()
