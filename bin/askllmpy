@@ -1,5 +1,5 @@
-#!/home/gma/miniforge3/bin/python
 #!/home/akey/anaconda3/envs/ai/bin/python
+#!/home/gma/miniforge3/bin/python
 import os
 import sys
 import json
@@ -145,7 +145,7 @@ class MarkdownApp(App):
     def beautify_and_stream_output(self, response):
         cot_content = ""
         t0 = time.time()
-        interval = 1.0
+        interval = 0.0
         last_mark = 0
         mark_step = 16
         for chunk in response:
@@ -166,7 +166,7 @@ class MarkdownApp(App):
                     # scroll to the bottom
                     self.output.scroll_y = self.output.max_scroll_y
                     t0 = time.time()
-        self.call_from_thread(self.output.update, (self.markdown_content))
+        self.call_from_thread(self.output.update, (f'{self.markdown_content}\n\n*Done*'))
 
     @work(thread=True)
     def do_work(self):
@@ -182,11 +182,11 @@ class MarkdownApp(App):
         if not question:
             self.call_from_thread(self.output.update, ("Error: No question provided."))
 
-        self.call_from_thread(self.output.update, (f"Analyzing question... ({question})"))
+        self.call_from_thread(self.output.update, (f"**Analyzing question...**\n*{question}*"))
         need_search, keywords = decide_web_search(question)
 
         if need_search:
-            self.call_from_thread(self.output.update, (f"Web search needed for keywords: {keywords}"))
+            self.call_from_thread(self.output.update, (f"**Web search needed for keywords:** *{keywords}*"))
             search_results, text = perform_web_search(keywords, question)
             references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
             messages = [
@@ -199,7 +199,7 @@ class MarkdownApp(App):
                 {"role": "user", "content": question}
             ]
 
-        self.call_from_thread(self.output.update, ("Generating answer..."))
+        self.call_from_thread(self.output.update, ("**Generating answer...**"))
         response = query_deepseek(messages, stream=True, need_reasoning=need_reasoning)
         self.beautify_and_stream_output(response)
 
