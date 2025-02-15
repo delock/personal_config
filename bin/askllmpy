@@ -138,20 +138,17 @@ class MarkdownApp(App):
 
     BINDINGS = [
         Binding("q", "exit", "Exit", tooltip="Exit this app"),
-        Binding("d", "debug", "Debug", tooltip="Toggle debug window"),
     ]
 
     markdown_content = ""
     def __init__(self) -> None:
         self.output = Markdown()
         self.info = Markdown()
-        self._debug = Markdown()
         self.output.styles.height = "1fr"
         self.info.styles.height = 2
         self.info.styles.background = "gray"
+        self.info.styles.color = "black"
         self.info.styles.overflow_y = "hidden"
-        self._debug.styles.height = 10
-        self.show_debug = False
         """Initialize the MarkdownApp."""
         super().__init__()
 
@@ -200,7 +197,6 @@ class MarkdownApp(App):
             self.call_from_thread(self.info.update, (f"**Web search needed for keywords:** *{keywords}*"))
             search_results, text = perform_web_search(keywords, question)
             references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
-            self.call_from_thred(self._debug.update, (f"Search results: \n{references}\n---\nExtracted text: \n{text}"))
             messages = [
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": f"{question}\n\nReferences:\n{references}\n\nExtracted text:\n{text}"}
@@ -228,8 +224,6 @@ class MarkdownApp(App):
         #yield Footer()
         yield self.output
         yield self.info
-        if self.show_debug:
-            yield self._debug
 
     async def on_mount(self) -> None:
         self.do_work()
