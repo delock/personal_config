@@ -16,6 +16,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.reactive import var
 from textual.widgets import Footer, Markdown
+from textual.widget import Widget
 from textual.worker import Worker, get_current_worker
 from textual import work
 
@@ -121,11 +122,23 @@ def perform_web_search(keywords, question):
         pass
     return search_results, text
 
+class Info(Widget):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._content = ""
+
+    def update(self, content: str) -> None:
+        self._content = content
+
+    def render(self) -> ComposeResult:
+        return self._content
+
 class MarkdownApp(App):
     """A simple Markdown viewer application."""
 
     BINDINGS = [
         Binding("q", "exit", "Exit", tooltip="Exit this app"),
+        Binding("d", "debug", "Debug", tooltip="Toggle debug window"),
     ]
 
     markdown_content = ""
@@ -133,6 +146,12 @@ class MarkdownApp(App):
         self.output = Markdown()
         self.info = Markdown()
         self._debug = Markdown()
+        self.output.styles.height = "1fr"
+        self.info.styles.height = 2
+        self.info.styles.background = "gray"
+        self.info.styles.overflow_y = "hidden"
+        self._debug.styles.height = 10
+        self.show_debug = False
         """Initialize the MarkdownApp."""
         super().__init__()
 
@@ -209,7 +228,8 @@ class MarkdownApp(App):
         #yield Footer()
         yield self.output
         yield self.info
-        yield self._debug
+        if self.show_debug:
+            yield self._debug
 
     async def on_mount(self) -> None:
         self.do_work()
