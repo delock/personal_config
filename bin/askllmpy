@@ -5,6 +5,7 @@ import sys
 import json
 import signal
 import time
+import datetime
 from openai import OpenAI
 from googlesearch import search
 from rich.console import Console
@@ -53,15 +54,17 @@ def query_deepseek(messages, stream=False, need_reasoning=False):
         sys.exit(1)
 
 def decide_web_search(question):
+    today = datetime.date.today()
     messages = [
         {"role": "system", "content": "You are a helpful assistant that decides if a web search is needed. Output in JSON format."},
+        {"role": "system", "content": "Today's date is: " + today.strftime("%B %d, %Y")},
         {"role": "user", "content": f"Question: {question}\n\nOutput JSON format: {{\"need_search\": true/false, \"keywords\": \"search keywords\"}}"}
     ]
     response = query_deepseek(messages)
     response = response.replace("```json", "").replace("```", "")
     try:
         decision = json.loads(response)
-        return decision.get("need_suarch", False), decision.get("keywords", "")
+        return decision.get("need_search", False), decision.get("keywords", "")
     except json.JSONDecodeError:
         return False, ""
 
@@ -114,9 +117,6 @@ def perform_web_search(keywords, question):
         html_content = response.text
         soup = BeautifulSoup(html_content, "html.parser")
         text = strip_empty_lines(soup.get_text())
-        #print ("Extracting the most relvant contents")
-        #text = extract_relevant_text(text, keywords)
-        #print (text)
     except Exception as e:
         text = ""
         pass
@@ -166,9 +166,11 @@ class MarkdownApp(App):
                     reasoning_content = chunk.choices[0].delta.reasoning_content
                     if reasoning_content != None:
                         cot_content += reasoning_content
+                        self.call_from_thread(self.info.update, ("**Thinking...**"))
                 else:
                   if content != None:
                       self.markdown_content += f'{content}'
+                      self.call_from_thread(self.info.update, ("**Answering...**"))
                 if time.time() - t0 > interval:
                     # quote every line in cot_content
                     quote_cot_content = "" if cot_content=="" else "\n".join([f"> {line}" for line in cot_content.split("\n")])
@@ -193,18 +195,24 @@ class MarkdownApp(App):
         self.call_from_thread(self.info.update, (f"**Analyzing question...**\n*{question}*"))
         need_search, keywords = decide_web_search(question)
 
+        # get today's date and put that in system prompt
+        today = datetime.date.today()
         if need_search:
             self.call_from_thread(self.info.update, (f"**Web search needed for keywords:** *{keywords}*"))
             search_results, text = perform_web_search(keywords, question)
             references = "\n".join([f"- [{result['title']}]({result['url']}): {result['description']}" for result in search_results])
             messages = [
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": f"{question}\n\nReferences:\n{references}\n\nExtracted text:\n{text}"}
+                {"role": "system", "content": "Today's date is: " + today.strftime("%B %d, %Y")},
+                {"role": "system", "content": "The following search results were found by real time web search."},
+                {"role": "system", "content": f"Search results:\n{references}\n\nExtracted content:\n{text}"},
+                {"role": "user", "content": question}
             ]
         else:
             self.call_from_thread(self.info.update, (f"**No web search needed.**"))
             messages = [
                 {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "Today's date is: " + today.strftime("%B %d, %Y")},
                 {"role": "user", "content": question}
             ]
 
