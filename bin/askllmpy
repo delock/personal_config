@@ -1,5 +1,5 @@
-#!/home/akey/anaconda3/envs/ai/bin/python
 #!/home/gma/miniforge3/bin/python
+#!/home/akey/anaconda3/envs/ai/bin/python
 import os
 import sys
 import json
@@ -8,9 +8,6 @@ import time
 import datetime
 from openai import OpenAI
 from googlesearch import search
-from rich.console import Console
-from rich.markdown import Markdown as richMarkdown
-#from rich.live import Live
 import requests
 from bs4 import BeautifulSoup
 from textual.app import App, ComposeResult
@@ -20,9 +17,6 @@ from textual.widgets import Footer, Markdown
 from textual.widget import Widget
 from textual.worker import Worker, get_current_worker
 from textual import work
-
-# Initialize Rich console
-console = Console()
 
 # Environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -175,8 +169,10 @@ class MarkdownApp(App):
                     # quote every line in cot_content
                     quote_cot_content = "" if cot_content=="" else "\n".join([f"> {line}" for line in cot_content.split("\n")])
                     self.call_from_thread(self.output.update, (f'{quote_cot_content}\n{self.markdown_content}'))
+                    self.output.scroll_y = self.output.max_scroll_y
                     t0 = time.time()
         self.call_from_thread(self.output.update, (f'{self.markdown_content}'))
+        self.output.scroll_y = self.output.max_scroll_y
 
     @work(thread=True)
     def do_work(self):
@@ -248,8 +244,6 @@ class MarkdownApp(App):
 
     async def action_exit(self) -> None:
         """Exit the application."""
-        #if self.markdown_content != "":
-            #console.print(richMarkdown(self.markdown_content))
         self.exit()
 
     def check_action(self, action: str, _) -> bool | None:
