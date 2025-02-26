@@ -1,0 +1,167 @@
+#!/home/gma/miniforge3/bin/python
+import os
+import sys
+import requests
+import PyPDF2
+from openai import OpenAI
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.live import Live
+from urllib.parse import urlparse
+from textual.app import App, ComposeResult
+from textual.binding import Binding
+from textual.reactive import var
+from textual.widgets import Footer, Markdown, Input, Label
+from textual.widget import Widget
+from textual.worker import Worker, get_current_worker
+from textual import work
+
+console = Console()
+
+def download_pdf(url, cache_dir="~/.cache/chatwithpdf"):
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+
+    parsed_url = urlparse(url)
+    filename = os.path.join(cache_dir, os.path.basename(parsed_url.path))
+
+    if os.path.exists(filename):
+        console.print(f"Using cached file: {filename}")
+        return filename
+
+    console.print(f"Downloading PDF from {url}...")
+    response = requests.get(url, stream=True)
+    with open(filename, 'wb') as file:
+        for chunk in response.iter_content(chunk_size=8192):
+            file.write(chunk)
+
+    console.print(f"PDF downloaded and saved as {filename}")
+    return filename
+
+def extract_text_from_pdf(pdf_path):
+    console.print(f"Extracting text from PDF: {pdf_path}")
+    text = ""
+    with open(pdf_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        for page in reader.pages:
+            text += page.extract_text()
+    return text
+
+def initialize_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    base_url = os.getenv("OPENAI_API_URL")
+    model_name = os.getenv("OPENAI_API_REASONER")
+
+    if not api_key or not base_url or not model_name:
+        console.print("Error: Please set OPENAI_API_KEY, OPENAI_API_URL, and OPENAI_API_MODEL environment variables.")
+        sys.exit(1)
+
+    return OpenAI(api_key=api_key, base_url=base_url), model_name
+
+def ask_question(client, model_name, content, question):
+    messages = [
+        #{"role": "system", "content": "You are a helpful assistant"},
+        #{"role": "user", "content": content[:60000] if len(content) > 60000 else content},
+        #{"role": "user", "content": question},
+        {"role": "system", "content": "You are a helpful assistant.  The following is content from a text file, followed by a question.  The assistant will provide an answer."},  
+        {"role": "user", "content": f"Start of content\nvvvvv\n{content[:60000] if len(content) > 60000 else content}\n^^^^^\nEnd of content\n\nQuestion: {question}"},
+    ]
+
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        stream=True
+    )
+
+    return response
+
+def pretty_sympify(content):
+    return content
+    # extract math formula from content, sympify them and insert back into text
+    # all math formulas are enclosed in [ ]
+    math_formulas = [formula for formula in content.split("[") if "]" in formula]
+
+    for formula in math_formulas:
+        content = content.replace(formula, pretty(sympify(formula)))
+    return content
+
+class ChatPDFApp(App):
+    """A simple app to chat with a PDF file using OpenAI's Chat API."""
+    """There are three windows from top down:
+      PDF: Show the PDF content
+      History: Show the chat history, question and answer shown in different color
+      Input: Input field to input question
+    """
+    def __init__(self):
+        self.history_window = Markdown()
+        self.history_window.styles.height = "1fr"
+        self.input_window = Input(disabled=True)
+        self.input_window.styles.height = 3
+        self.status = Label()
+        self.client, self.model_name = initialize_openai_client()
+        self.markdown_text = ""
+        super().__init__()
+
+    def compose(self) -> ComposeResult:
+        yield self.status
+        yield self.history_window
+        yield self.input_window
+
+    @work(thread=True)
+    def load_pdf(self):
+        self.call_from_thread(self.status.update, "Loading PDF...")
+        input_arg = sys.argv[1]
+        pdf_path = input_arg
+        if input_arg.startswith("http://") or input_arg.startswith("https://"):
+            self.call_from_thread(self.status.update, "Downloading PDF...")
+            pdf_path = download_pdf(input_arg)
+
+        if not os.path.exists(pdf_path):
+            self.call_from_thread(self.status.update, f"Error: PDF file not found: {pdf_path}, press Ctrl-q to exit")
+        else:
+            self.call_from_thread(self.status.update, "Extracting text from PDF...")
+
+            self.pdf_text = extract_text_from_pdf(pdf_path)
+            self.input_window.disabled = False
+            self.call_from_thread(self.status.update, "Ready")
+            self.call_from_thread(self.input_window.focus)
+
+    @work(thread=True)
+    def answer_question(self, question):
+        response = ask_question(self.client, self.model_name, self.pdf_text, question)
+        self.markdown_text += f"\n\n---\n# {question}\n---\n"
+        answer_text = ""
+        think_text = ""
+        for chunk in response:
+            if hasattr(chunk.choices[0].delta, 'reasoning_content'):
+                reasoning_content = chunk.choices[0].delta.reasoning_content
+                if reasoning_content != None:
+                    think_text += reasoning_content
+            if chunk.choices[0].delta.content:
+                answer_text += chunk.choices[0].delta.content
+            quote_cot_content = "" if think_text=="" else "\n".join([f"> {line}" for line in think_text.split("\n")])
+            self.call_from_thread(self.history_window.update, f"{self.markdown_text}{quote_cot_content}{answer_text}")
+            self.history_window.scroll_y = self.history_window.max_scroll_y
+        self.markdown_text += answer_text
+        self.call_from_thread(self.history_window.update, self.markdown_text)
+        self.history_window.scroll_y = self.history_window.max_scroll_y
+        self.input_window.disabled = False
+        self.call_from_thread(self.status.update, "Ready")
+
+    async def on_mount(self) -> None:
+        self.load_pdf()
+
+    def on_key(self, event):
+        if event.key == "enter":
+            user_input = self.input_window.value
+            self.status.update(f"Answering question: {user_input}")
+            self.input_window.value = ""
+            self.input_window.disabled = True
+            self.answer_question(user_input)
+
+    def on_mouse_scroll(self, event):
+        self.history_window.scroll(event.delta.y)
+
+if __name__ == "__main__":
+    chatpdfapp = ChatPDFApp()
+    chatpdfapp.run()
