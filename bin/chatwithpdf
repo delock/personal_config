@@ -60,9 +60,11 @@ def initialize_openai_client():
 
 def ask_question(client, model_name, content, question):
     messages = [
-        {"role": "system", "content": "You are a helpful assistant"},
-        {"role": "user", "content": content[:60000] if len(content) > 60000 else content},
-        {"role": "user", "content": question},
+        #{"role": "system", "content": "You are a helpful assistant"},
+        #{"role": "user", "content": content[:60000] if len(content) > 60000 else content},
+        #{"role": "user", "content": question},
+        {"role": "system", "content": "You are a helpful assistant.  The following is content from a text file, followed by a question.  The assistant will provide an answer."},  
+        {"role": "user", "content": f"Start of content\nvvvvv\n{content[:60000] if len(content) > 60000 else content}\n^^^^^\nEnd of content\n\nQuestion: {question}"},
     ]
 
     response = client.chat.completions.create(
