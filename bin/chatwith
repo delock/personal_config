@@ -1,8 +1,10 @@
+#!/home/akey/anaconda3/envs/ai/bin/python
 #!/home/gma/miniforge3/bin/python
 import os
 import sys
 import requests
 import PyPDF2
+from bs4 import BeautifulSoup
 from openai import OpenAI
 from rich.console import Console
 from rich.markdown import Markdown
@@ -85,7 +87,7 @@ def pretty_sympify(content):
         content = content.replace(formula, pretty(sympify(formula)))
     return content
 
-class ChatPDFApp(App):
+class ChatApp(App):
     """A simple app to chat with a PDF file using OpenAI's Chat API."""
     """There are three windows from top down:
       PDF: Show the PDF content
@@ -107,24 +109,88 @@ class ChatPDFApp(App):
         yield self.history_window
         yield self.input_window
 
-    @work(thread=True)
-    def load_pdf(self):
-        self.call_from_thread(self.status.update, "Loading PDF...")
-        input_arg = sys.argv[1]
-        pdf_path = input_arg
-        if input_arg.startswith("http://") or input_arg.startswith("https://"):
-            self.call_from_thread(self.status.update, "Downloading PDF...")
-            pdf_path = download_pdf(input_arg)
-
-        if not os.path.exists(pdf_path):
-            self.call_from_thread(self.status.update, f"Error: PDF file not found: {pdf_path}, press Ctrl-q to exit")
+    def get_content_type(self, url_or_path):
+        """Detect content type from file extension or HTTP headers"""
+        if url_or_path.startswith(("http://", "https://")):
+            try:
+                response = requests.head(url_or_path, allow_redirects=True)
+                content_type = response.headers.get('Content-Type', '')
+                if 'pdf' in content_type:
+                    return 'pdf'
+                elif 'text/html' in content_type:
+                    return 'html'
+            except Exception as e:
+                console.print(f"Error detecting content type: {e}")
+                return 'unknown'
         else:
-            self.call_from_thread(self.status.update, "Extracting text from PDF...")
+            if url_or_path.lower().endswith('.pdf'):
+                return 'pdf'
+            elif url_or_path.lower().endswith(('.txt', '.md')):
+                return 'text'
+        return 'unknown'
 
-            self.pdf_text = extract_text_from_pdf(pdf_path)
-            self.input_window.disabled = False
-            self.call_from_thread(self.status.update, "Ready")
-            self.call_from_thread(self.input_window.focus)
+    def extract_webpage_text(self, html_content):
+        """Extract main content from HTML using BeautifulSoup"""
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Remove unwanted elements
+        for element in soup(['script', 'style', 'nav', 'footer', 'header', 'aside']):
+            element.decompose()
+            
+        # Get text from main content areas
+        main_content = soup.find('article') or soup.find('main') or soup.body
+        return main_content.get_text(separator='\n', strip=True) if main_content else ""
+
+    @work(thread=True)
+    def load_content(self):
+        self.call_from_thread(self.status.update, "Loading content...")
+        input_arg = sys.argv[1]
+        
+        content_type = self.get_content_type(input_arg)
+        
+        if content_type == 'pdf':
+            # Handle PDF files (existing functionality)
+            if input_arg.startswith(("http://", "https://")):
+                self.call_from_thread(self.status.update, "Downloading PDF...")
+                file_path = download_pdf(input_arg)
+            else:
+                file_path = input_arg
+
+            if not os.path.exists(file_path):
+                self.call_from_thread(self.status.update, f"Error: File not found: {file_path}")
+                return
+
+            self.call_from_thread(self.status.update, "Extracting text from PDF...")
+            self.pdf_text = extract_text_from_pdf(file_path)
+
+        elif content_type == 'html':
+            # Handle web pages
+            self.call_from_thread(self.status.update, "Downloading webpage...")
+            try:
+                response = requests.get(input_arg)
+                response.raise_for_status()
+                self.call_from_thread(self.status.update, "Extracting main content...")
+                self.pdf_text = self.extract_webpage_text(response.text)
+            except Exception as e:
+                self.call_from_thread(self.status.update, f"Error loading webpage: {str(e)}")
+                return
+
+        elif content_type == 'text':
+            # Handle local text files
+            try:
+                with open(input_arg, 'r', encoding='utf-8') as f:
+                    self.pdf_text = f.read()
+            except Exception as e:
+                self.call_from_thread(self.status.update, f"Error reading text file: {str(e)}")
+                return
+
+        else:
+            self.call_from_thread(self.status.update, "Unsupported file type")
+            return
+
+        self.input_window.disabled = False
+        self.call_from_thread(self.status.update, "Ready")
+        self.call_from_thread(self.input_window.focus)
 
     @work(thread=True)
     def answer_question(self, question):
@@ -149,7 +215,7 @@ class ChatPDFApp(App):
         self.call_from_thread(self.status.update, "Ready")
 
     async def on_mount(self) -> None:
-        self.load_pdf()
+        self.load_content()
 
     def on_key(self, event):
         if event.key == "enter":
@@ -163,5 +229,5 @@ class ChatPDFApp(App):
         self.history_window.scroll(event.delta.y)
 
 if __name__ == "__main__":
-    chatpdfapp = ChatPDFApp()
+    chatpdfapp = ChatApp()
     chatpdfapp.run()
