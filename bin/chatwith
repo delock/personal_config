@@ -2,6 +2,7 @@
 #!/home/gma/miniforge3/bin/python
 import os
 import sys
+import json
 import requests
 import PyPDF2
 from bs4 import BeautifulSoup
@@ -60,14 +61,19 @@ def initialize_openai_client():
 
     return OpenAI(api_key=api_key, base_url=base_url), model_name
 
-def ask_question(client, model_name, content, question):
+def ask_question(client, model_name, content, question, chat_history=[]):
     messages = [
-        #{"role": "system", "content": "You are a helpful assistant"},
-        #{"role": "user", "content": content[:60000] if len(content) > 60000 else content},
-        #{"role": "user", "content": question},
-        {"role": "system", "content": "You are a helpful assistant.  The following is content from a text file, followed by a question.  The assistant will provide an answer."},  
-        {"role": "user", "content": f"Start of content\nvvvvv\n{content[:60000] if len(content) > 60000 else content}\n^^^^^\nEnd of content\n\nQuestion: {question}"},
+        {"role": "system", "content": "You are a helpful assistant. The following is content from a text file, followed by a conversation history and a new question."},
+        {"role": "user", "content": f"Document Content:\nvvvvv\n{content[:60000] if len(content) > 60000 else content}\n^^^^^"}
     ]
+    
+    # Add chat history
+    for q, a in chat_history:
+        messages.append({"role": "user", "content": q})
+        messages.append({"role": "assistant", "content": a})
+        
+    # Add current question
+    messages.append({"role": "user", "content": f"New Question: {question}"})
 
     response = client.chat.completions.create(
         model=model_name,
@@ -88,7 +94,7 @@ def pretty_sympify(content):
     return content
 
 class ChatApp(App):
-    """A simple app to chat with a PDF file using OpenAI's Chat API."""
+    """A simple app to chat with documents using OpenAI's Chat API."""
     """There are three windows from top down:
       PDF: Show the PDF content
       History: Show the chat history, question and answer shown in different color
@@ -102,6 +108,9 @@ class ChatApp(App):
         self.status = Label()
         self.client, self.model_name = initialize_openai_client()
         self.markdown_text = ""
+        self.chat_history = []
+        self.cache_dir = os.path.expanduser("~/.cache/chatwith")
+        os.makedirs(self.cache_dir, exist_ok=True)
         super().__init__()
 
     def compose(self) -> ComposeResult:
@@ -194,7 +203,16 @@ class ChatApp(App):
 
     @work(thread=True)
     def answer_question(self, question):
-        response = ask_question(self.client, self.model_name, self.pdf_text, question)
+        # Save chat history to cache
+        cache_file = os.path.join(self.cache_dir, "history.json")
+        try:
+            with open(cache_file, 'w') as f:
+                json.dump(self.chat_history, f)
+        except Exception as e:
+            console.print(f"Error saving chat history: {e}")
+
+        response = ask_question(self.client, self.model_name, self.pdf_text, question, self.chat_history)
+        self.chat_history.append((question, ""))  # Add question before getting answer
         self.markdown_text += f"\n\n---\n# {question}\n---\n"
         answer_text = ""
         think_text = ""
@@ -226,8 +244,8 @@ class ChatApp(App):
             self.answer_question(user_input)
 
     def on_mouse_scroll(self, event):
-        self.history_window.scroll(event.delta.y)
+        self.history_window.scroll_y += event.delta.y * 3
 
 if __name__ == "__main__":
-    chatpdfapp = ChatApp()
-    chatpdfapp.run()
+    app = ChatApp()
+    app.run()
