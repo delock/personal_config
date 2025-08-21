@@ -11,13 +11,13 @@ from math import *
 import re
 args = ''.join(sys.argv[1:])
 #print args
-args = re.sub("\[", "(", args)
-args = re.sub("\]", ")", args)
+args = re.sub("\\[", "(", args)
+args = re.sub("\\]", ")", args)
 #args = re.sub("([0-9\)\s])x([0-9\)\s])", "\g<1>*\g<2>", args)
 #args = re.sub("([0-9\)\s])p([0-9\(\s])", "\g<1>+\g<2>", args)
 #args = re.sub("([0-9\)\s])\^([0-9\(\s])", "\g<1>**\g<2>", args)
-args = re.sub("([0-9]+)!", "factorial(\g<1>)", args)
-args = re.sub("([0-9]+)!", "factorial(\g<1>)", args)
+args = re.sub("([0-9]+)!", "factorial(\\g<1>)", args)
+args = re.sub("([0-9]+)!", "factorial(\\g<1>)", args)
 try:
     res = eval(args)
     if res > 1024*1024*1024 :
