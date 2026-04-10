@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-6",
+  "agent": {
+    "build": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "prompt": "You are the primary coding agent. Follow this escalation ladder strictly:\n\n1. HANDLE DIRECTLY — simple, well-defined tasks: small bug fixes, config changes, single-file edits.\n2. INVOKE @architect — complex tasks where you need a plan before acting: cross-file refactoring, new feature design, ambiguous requirements, or any task where the right approach is unclear.\n3. INVOKE @debugger — only when you are genuinely stuck after attempting a task AND following an @architect plan has not resolved it. Concrete triggers: the same error recurs after 2+ fix attempts, a test keeps failing despite multiple approaches, or you have exhausted your ideas. Hand off full context: what you tried, what failed, and the exact error. @debugger has full execution rights and will take over until the blocker is resolved, then return control to you."
+    },
+    "architect": {
+      "mode": "subagent",
+      "model": "anthropic/claude-opus-4-6",
+      "description": "Called only for complex tasks requiring deep reasoning: system design, multi-module refactoring plans, debugging strategies for hard problems. Outputs a structured plan only — does NOT write or edit any files.",
+      "prompt": "You are a senior technical advisor. Your role is to provide concise, actionable guidance when the executor is stuck. Output a short plan (3-7 steps), a targeted correction, or a STOP signal if the task is infeasible. Do NOT write code or produce long explanations. Be direct and specific.",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny"
+      }
+    },
+    "debugger": {
+      "mode": "subagent",
+      "model": "anthropic/claude-opus-4-6",
+      "description": "Last-resort problem solver. Invoked only when the primary agent is genuinely stuck after multiple failed attempts and an architect plan has not resolved the blocker. Has full execution rights. Diagnoses the root cause, fixes it, verifies the fix, then hands back a clear summary of what was done.",
+      "prompt": "You are a last-resort debugger with full execution rights. You are called only when the primary agent is genuinely blocked. Your job: diagnose the root cause of the blocker, fix it with the minimum necessary changes, verify the fix works, and return a concise summary of (1) root cause, (2) what you changed, (3) how to avoid this in future. Do not refactor unrelated code. Do not over-explain. Resolve the blocker and hand back control."
+    },
+    "coder": {
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6",
+      "description": "Executes concrete implementation work: writing files, editing code, running commands. Use when the approach is already clear."
+    },
+    "explore": {
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6",
+      "description": "Fast read-only codebase exploration: find files, search code, understand structure."
+    }
+  }
+}
