@@ -22,10 +22,14 @@ STYLE_BLOCK = """<style>
 .sp-m{color:#6e7781}
 .sp-c{color:#57606a}
 /* Wrap mode (off by default): the in-page Wrap button toggles the body class
-   "wrap"; --wrap renders that class on from the start. */
+   "wrap"; --wrap renders that class on from the start.
+   The table keeps `table-layout:auto`: the colgroup hints of width:1% for the two
+   number columns would collapse them under a fixed layout (the digits then pile
+   up), so wrapping is driven by the code cell alone. */
 body.wrap .dfd{width:auto;max-width:100%;overflow-x:hidden;overflow-y:visible}
-body.wrap .dft{table-layout:fixed;width:100%}
+body.wrap .dft{width:100%}
 body.wrap .dfc{white-space:pre-wrap;overflow-wrap:anywhere}
+body.wrap .dfn{white-space:nowrap}
 body.wrap .dfn,body.wrap .dfc{vertical-align:top}
 /* Wrap toggle: pinned to the viewport so it stays reachable while scrolling. */
 .vt{position:fixed;top:8px;right:12px;z-index:20;padding:6px 10px;font:600 12px/1 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;color:#24292f;background:#f6f8fa;border:1px solid #d0d7de;border-radius:6px;cursor:pointer;box-shadow:0 1px 3px rgba(27,31,36,.12)}
