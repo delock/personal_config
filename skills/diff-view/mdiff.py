@@ -8,7 +8,7 @@ import re
 import sys
 
 STYLE_BLOCK = """<style>
-.dfd{border:1px solid #d0d7de;border-radius:6px;overflow:hidden;width:max-content;max-width:100%;font-size:12px;line-height:20px;color:#24292f;margin:12px 0;font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace!important}
+.dfd{border:1px solid #d0d7de;border-radius:6px;overflow-x:auto;overflow-y:hidden;width:max-content;max-width:100%;font-size:12px;line-height:20px;color:#24292f;margin:12px 0;font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace!important}
 .dfh{display:flex;justify-content:space-between;align-items:center;background-color:#f6f8fa;padding:8px 16px;border-bottom:1px solid #d0d7de;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;font-size:12px}
 .dft{border-collapse:collapse;border-spacing:0;background:#fff;font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace!important}
 .dfn{padding:0 10px;color:#6e7781;background-color:#f6f8fa;text-align:right;user-select:none;vertical-align:middle;font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace!important}
@@ -21,6 +21,16 @@ STYLE_BLOCK = """<style>
 .sp-h{color:#0550ae}
 .sp-m{color:#6e7781}
 .sp-c{color:#57606a}
+/* Wrap mode (off by default): the in-page Wrap button toggles the body class
+   "wrap"; --wrap renders that class on from the start. */
+body.wrap .dfd{width:auto;max-width:100%;overflow-x:hidden;overflow-y:visible}
+body.wrap .dft{table-layout:fixed;width:100%}
+body.wrap .dfc{white-space:pre-wrap;overflow-wrap:anywhere}
+body.wrap .dfn,body.wrap .dfc{vertical-align:top}
+/* Wrap toggle: pinned to the viewport so it stays reachable while scrolling. */
+.vt{position:fixed;top:8px;right:12px;z-index:20;padding:6px 10px;font:600 12px/1 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;color:#24292f;background:#f6f8fa;border:1px solid #d0d7de;border-radius:6px;cursor:pointer;box-shadow:0 1px 3px rgba(27,31,36,.12)}
+.vt:hover{background:#eef1f4}
+.vt:active{background:#e6eaef}
 </style>"""
 
 HTML_EXTRA_STYLE = """<style>
@@ -34,6 +44,35 @@ details{overflow:visible}
 </style>"""
 
 HUNK_RE = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$')
+
+# In-page wrap switch. Toggles a body class only; no storage APIs are used because
+# sidebar document iframes are sandboxed without allow-same-origin (localStorage
+# throws there), and `w` gives a keyboard shortcut.
+TOGGLE_BUTTON = '<button id="wrap-toggle" class="vt" type="button" aria-pressed="false">Wrap: off</button>'
+
+TOGGLE_SCRIPT = """<script>
+(function () {
+  var body = document.body;
+  var button = document.getElementById('wrap-toggle');
+  if (!button) return;
+  function sync() {
+    var on = body.classList.contains('wrap');
+    button.textContent = 'Wrap: ' + (on ? 'on' : 'off');
+    button.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  button.addEventListener('click', function () {
+    body.classList.toggle('wrap');
+    sync();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'w' && event.key !== 'W') return;
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    body.classList.toggle('wrap');
+    sync();
+  });
+  sync();
+})();
+</script>"""
 
 
 def esc(text, pipe_safe=False):
@@ -165,7 +204,7 @@ def render_markdown(files, title):
     return '\n'.join(parts)
 
 
-def render_html(files, title):
+def render_html(files, title, wrap=False):
     total_added = sum(f.added for f in files)
     total_removed = sum(f.removed for f in files)
     parts = [
@@ -178,14 +217,14 @@ def render_html(files, title):
         STYLE_BLOCK,
         HTML_EXTRA_STYLE,
         '</head>',
-        '<body>',
+        '<body class="wrap">' if wrap else '<body>',
         '<h1>{}{}</h1>'.format(esc(title), ' ' + stat_spans(total_added, total_removed)),
     ]
     for block in files:
         parts.append('<details open><summary>{}&nbsp;&nbsp;{}</summary>{}</details>'.format(
             esc(block.display_path), stat_spans(block.added, block.removed),
             render_file(block, show_header=False)))
-    parts.extend(['</body>', '</html>', ''])
+    parts.extend([TOGGLE_BUTTON, TOGGLE_SCRIPT, '</body>', '</html>', ''])
     return '\n'.join(parts)
 
 
@@ -198,6 +237,10 @@ def main():
                     choices=('auto', 'html', 'md'),
                     default='auto',
                     help="output format; 'auto' infers it from the -o extension (default: html)")
+    ap.add_argument('--wrap',
+                    action='store_true',
+                    help='start with long lines wrapped; default is no wrapping '
+                         '(the page also has a Wrap button and a `w` shortcut)')
     args = ap.parse_args()
     if args.input == '-':
         diff_text = sys.stdin.read()
@@ -219,7 +262,11 @@ def main():
     files = parse(diff_text)
     if not files:
         ap.error('no "diff --git" sections found in input')
-    text = render_markdown(files, args.title) if fmt == 'md' else render_html(files, args.title)
+    if args.wrap and fmt == 'md':
+        print('warning: --wrap applies to HTML output only; markdown output is unchanged',
+              file=sys.stderr)
+    text = (render_markdown(files, args.title) if fmt == 'md'
+            else render_html(files, args.title, wrap=args.wrap))
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(text)
     print(out_path)
