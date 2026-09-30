@@ -1,3 +1,8 @@
+---
+name: diff-view
+description: Use when showing a diff or patch to the user, or when rendering diff/patch output in the sidebar. Triggers on keywords like diff, patch, git show, git diff, review rendering, and standalone HTML diff view. Renders unified diffs as GitHub-style standalone HTML with the bundled mdiff.py.
+---
+
 # diff-view: GitHub-style diff rendering in the sidebar
 
 ## Output format: standalone HTML (NOT markdown)
