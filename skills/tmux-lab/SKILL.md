@@ -220,3 +220,4 @@ htop                                              # process monitor
 - **Respect the user's hardware.** Don't blindly run `nvidia-smi` on loop if the user doesn't want monitoring overhead — ask about monitoring preferences.
 - **Log timestamps matter.** Always include timestamps in the Timeline section for post-mortem analysis.
 - **If SSH connection drops**, detect it (shell prompt changes, connection refused in output) and alert the user immediately.
+- **Don't use tail command in the pane for monitoring if the user doesn't want it.** Instead, capture the pane output periodically and parse it for progress and errors.
